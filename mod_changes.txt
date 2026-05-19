@@ -1,0 +1,30 @@
+Stick War 2 Version 2(Newer) - Mod Change Log
+
+Magikill
+- Hold and settled point-Move now trigger defend-style autocast instead of going idle.
+- Direct right-click enemy targeting now influences spell focus more reliably.
+- Locked / unreasearched spells are skipped properly for autocast.
+- Defend autocast can react using spell range instead of only melee reach.
+- Attack autocast uses weighted random among valid spells:
+  Meteor = 5
+  Electric Wall = 3
+  Poison = 2
+- Added Meteor Only autocast toggle for Magikill by reusing the existing Cure toggle command.
+- Autocast now cancels if the locked target dies before the spell actually fires, preventing wasted casts on dead-target positions.
+
+Poisoned Unit Hotkey
+- Added poisoned-unit selection hotkey on J.
+- Press J once to select poisoned units on your team.
+- Double-tap J to jump the camera to a poisoned unit.
+- Poisoned miners are included.
+
+UI / Tooltip Fixes
+- Fixed command tooltip titles showing "Function Function() {}" by reading XML tooltip fields safely.
+
+Performance
+- SpatialHash area scans were optimized to reduce dictionary delete churn.
+- Unit distance checks were simplified in hot paths to reduce per-frame math overhead.
+
+Notes
+- The original new-class MeteorOnlyCommand approach was removed because it caused JPEXS / DoABC load-order issues.
+- The live Meteor Only system is the reused CureCommand version.
