@@ -745,30 +745,11 @@ package com.brockw.stickwar.singleplayer
 
       private function updateShadowrathStrategyDirtyState(hiddenCount:int) : void
       {
-         var unit:Unit = null;
-         var ownAliveCount:int = 0;
-         var enemyAliveCount:int = 0;
-         for each(unit in this.team.units)
-         {
-            if(unit != null && unit.isAlive())
-            {
-               ++ownAliveCount;
-            }
-         }
-         for each(unit in this.team.enemyTeam.units)
-         {
-            if(unit != null && unit.isAlive())
-            {
-               ++enemyAliveCount;
-            }
-         }
-         if(this.shadowrathLastOwnAliveCount != ownAliveCount || this.shadowrathLastEnemyAliveCount != enemyAliveCount || this.shadowrathLastHiddenCount != hiddenCount)
+         if(this.shadowrathLastHiddenCount != hiddenCount)
          {
             this.shadowrathStrategyDirty = true;
             this.markStrategyDirty();
          }
-         this.shadowrathLastOwnAliveCount = ownAliveCount;
-         this.shadowrathLastEnemyAliveCount = enemyAliveCount;
          this.shadowrathLastHiddenCount = hiddenCount;
       }
    }

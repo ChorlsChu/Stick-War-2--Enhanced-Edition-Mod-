@@ -1,6 +1,7 @@
 package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.UnitAi;
    import com.brockw.stickwar.engine.Ai.command.*;
@@ -1343,6 +1344,7 @@ package com.brockw.stickwar.engine.units
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          var dmg:Number = NaN;
+         var previousHealth:Number = this._health;
          if(this._campaignBossEscaping && (this.type == U_SPEARTON || this.type == U_ARCHER || this.type == U_NINJA))
          {
             return;
@@ -1380,6 +1382,10 @@ package com.brockw.stickwar.engine.units
             dmg /= this.team.healthModifier;
             dmg *= this.team.enemyTeam.damageModifier;
             this._health -= dmg;
+            if(this is Miner && Miner(this).isShadowrathDisguise && this._health < previousHealth && this.team != null && this.team.game != null && this.team.game.gameScreen is CampaignGameScreen)
+            {
+               CampaignGameScreen(this.team.game.gameScreen).onShadowrathFakeMinerDamaged(Miner(this));
+            }
             if(this._health <= 0)
             {
                this.arrowDeath = false;

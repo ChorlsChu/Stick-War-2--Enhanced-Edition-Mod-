@@ -179,6 +179,8 @@ package com.brockw.stickwar.engine.Team
       private var _statueType:String;
       
       private var _originalType:int;
+
+      private var _armyChangeVersion:int;
       
       public function Team(game:StickWar)
       {
@@ -224,6 +226,7 @@ package com.brockw.stickwar.engine.Team
          this._statueType = "default";
          this._damageModifier = 1;
          this._originalType = 0;
+         this._armyChangeVersion = 0;
       }
       
       public static function getTeamFromId(id:int, game:StickWar, health:int, techAllowed:Dictionary, handicap:* = 1, healthModifier:Number = 1) : Team
@@ -1031,6 +1034,7 @@ package com.brockw.stickwar.engine.Team
             game.soundManager.playSoundFullVolume("UnitReady");
          }
          unit.hasDefaultLoadout = this.loadout.unitHasDefaultLoadout(unit.type);
+         ++this._armyChangeVersion;
       }
       
       public function spawnMiners() : void
@@ -1054,6 +1058,7 @@ package com.brockw.stickwar.engine.Team
          {
             delete this.garrisonedUnits[unit.id];
          }
+         ++this._armyChangeVersion;
       }
       
       public function detectedUserInput(userInterface:UserInterface) : void
@@ -1078,6 +1083,7 @@ package com.brockw.stickwar.engine.Team
          {
             delete this.garrisonedUnits[unit.id];
          }
+         ++this._armyChangeVersion;
       }
       
       protected function singlePlayerDebugInputSwitch(userInterface:UserInterface, unitType:int, key:int) : void
@@ -1782,6 +1788,11 @@ package com.brockw.stickwar.engine.Team
       public function set currentAttackState(value:int) : void
       {
          this._currentAttackState = value;
+      }
+
+      public function get armyChangeVersion() : int
+      {
+         return this._armyChangeVersion;
       }
       
       public function get buttonInfoMap() : Dictionary

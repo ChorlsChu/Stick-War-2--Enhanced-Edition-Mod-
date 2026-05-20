@@ -9,7 +9,6 @@ package com.brockw.stickwar.engine.Ai
    import com.brockw.stickwar.engine.units.Archer;
    import com.brockw.stickwar.engine.units.EnslavedGiant;
    import com.brockw.stickwar.engine.units.Magikill;
-   import com.brockw.stickwar.engine.units.Monk;
    import com.brockw.stickwar.engine.units.Ninja;
    import com.brockw.stickwar.engine.units.Unit;
    
@@ -24,6 +23,18 @@ package com.brockw.stickwar.engine.Ai
       private var bossFocusTargetId:int;
 
       private var bossFocusFrames:int;
+
+      private var cachedBossPriorityTarget:Unit;
+
+      private var cachedBossPriorityTargetFrame:int;
+
+      private var cachedNearbyAttackerCount:int;
+
+      private var cachedNearbyAttackerCountFrame:int;
+
+      private var cachedNearbyBossLeader:Ninja;
+
+      private var cachedNearbyBossLeaderFrame:int;
       
       public function NinjaAi(s:Ninja)
       {
@@ -31,6 +42,12 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
          this.bossFocusTargetId = -1;
          this.bossFocusFrames = 0;
+         this.cachedBossPriorityTarget = null;
+         this.cachedBossPriorityTargetFrame = -1;
+         this.cachedNearbyAttackerCount = 0;
+         this.cachedNearbyAttackerCountFrame = -1;
+         this.cachedNearbyBossLeader = null;
+         this.cachedNearbyBossLeaderFrame = -1;
       }
       
       override public function update(game:StickWar) : void
@@ -62,14 +79,7 @@ package com.brockw.stickwar.engine.Ai
             if(Ninja(unit).bossEmergencySortie)
             {
                Ninja(unit).isBossMovementLocked = true;
-               if(!this.needsEmergencyStatueDefense())
-               {
-                  Ninja(unit).beginBossRecovery();
-               }
-               else
-               {
-                  Ninja(unit).tryBossChainCloak();
-               }
+               Ninja(unit).beginBossRecovery();
             }
             if(Ninja(unit).bossIsRetreating)
             {
@@ -157,9 +167,14 @@ package com.brockw.stickwar.engine.Ai
          var best:Unit = null;
          var bestPriority:int = 999;
          var priority:int = 0;
+         if(unit.team != null && unit.team.game != null && this.cachedBossPriorityTargetFrame == unit.team.game.frame)
+         {
+            return this.cachedBossPriorityTarget;
+         }
          best = this.getLockedBossPriorityTarget();
          if(best != null)
          {
+            this.cacheBossPriorityTarget(best);
             return best;
          }
          for each(enemy in unit.team.enemyTeam.units)
@@ -179,7 +194,17 @@ package com.brockw.stickwar.engine.Ai
          {
             this.lockBossFocusTarget(best);
          }
+         this.cacheBossPriorityTarget(best);
          return best;
+      }
+
+      private function cacheBossPriorityTarget(target:Unit) : void
+      {
+         this.cachedBossPriorityTarget = target;
+         if(unit.team != null && unit.team.game != null)
+         {
+            this.cachedBossPriorityTargetFrame = unit.team.game.frame;
+         }
       }
 
       private function getBossTargetPriority(enemy:Unit) : int
@@ -205,20 +230,10 @@ package com.brockw.stickwar.engine.Ai
 
       private function startBossRetreatMove(game:StickWar) : void
       {
-         var healer:Monk = null;
          var retreat:MoveCommand = new MoveCommand(game);
          retreat.type = UnitCommand.MOVE;
-         healer = this.getNearestFriendlyMonk();
-         if(healer != null)
-         {
-            retreat.goalX = healer.px;
-            retreat.goalY = healer.py;
-         }
-         else
-         {
-            retreat.goalX = unit.team.homeX + unit.team.direction * 150;
-            retreat.goalY = game.map.height / 2;
-         }
+         retreat.goalX = unit.team.homeX + unit.team.direction * 150;
+         retreat.goalY = game.map.height / 2;
          retreat.realX = retreat.goalX;
          retreat.realY = retreat.goalY;
          setCommand(game,retreat);
@@ -226,13 +241,6 @@ package com.brockw.stickwar.engine.Ai
 
       private function updateBossRetreat(game:StickWar) : void
       {
-         if(unit.isGarrisoned && this.needsEmergencyStatueDefense())
-         {
-            unit.ungarrison();
-            Ninja(unit).startBossEmergencySortie();
-            this.finishBossRetreat(game);
-            return;
-         }
          if(unit.health >= unit.maxHealth * Ninja(unit).bossReturnHealthRatio)
          {
             if(unit.isGarrisoned)
@@ -245,7 +253,7 @@ package com.brockw.stickwar.engine.Ai
          if(!unit.isGarrisoned)
          {
             this.startBossRetreatMove(game);
-            if(this.getNearestFriendlyMonk() == null && Math.abs(unit.px - unit.team.homeX) < 100)
+            if(Math.abs(unit.px - unit.team.homeX) < 100)
             {
                unit.garrison();
             }
@@ -266,48 +274,6 @@ package com.brockw.stickwar.engine.Ai
          attackMove.realX = attackMove.goalX;
          attackMove.realY = attackMove.goalY;
          setCommand(game,attackMove);
-      }
-
-      private function getNearestFriendlyMonk() : Monk
-      {
-         var ally:Unit = null;
-         var best:Monk = null;
-         var bestDistance:Number = Number.MAX_VALUE;
-         var distance:Number = NaN;
-         for each(ally in unit.team.unitGroups[Unit.U_MONK])
-         {
-            if(!(ally is Monk) || !ally.isAlive())
-            {
-               continue;
-            }
-            distance = Math.abs(ally.px - unit.px) + Math.abs(ally.py - unit.py);
-            if(distance < bestDistance)
-            {
-               bestDistance = distance;
-               best = Monk(ally);
-            }
-         }
-         return best;
-      }
-
-      private function needsEmergencyStatueDefense() : Boolean
-      {
-         var ally:Unit = null;
-         var enemy:Unit = null;
-         var statueUnderAttack:Boolean = false;
-         for each(enemy in unit.team.enemyTeam.units)
-         {
-            if(enemy != null && enemy.isAlive() && Math.abs(enemy.px - unit.team.statue.px) < 220)
-            {
-               statueUnderAttack = true;
-               break;
-            }
-         }
-         if(!statueUnderAttack)
-         {
-            return false;
-         }
-         return this.countLocalMeleeDefenders() <= 1;
       }
 
       private function tryBossAssassinMovement() : Boolean
@@ -412,6 +378,10 @@ package com.brockw.stickwar.engine.Ai
       {
          var ally:Unit = null;
          var count:int = 0;
+         if(unit.team != null && unit.team.game != null && this.cachedNearbyAttackerCountFrame == unit.team.game.frame)
+         {
+            return this.cachedNearbyAttackerCount;
+         }
          for each(ally in unit.team.units)
          {
             if(ally == null || ally == unit || !ally.isAlive() || ally.isGarrisoned)
@@ -426,6 +396,11 @@ package com.brockw.stickwar.engine.Ai
             {
                ++count;
             }
+         }
+         this.cachedNearbyAttackerCount = count;
+         if(unit.team != null && unit.team.game != null)
+         {
+            this.cachedNearbyAttackerCountFrame = unit.team.game.frame;
          }
          return count;
       }
@@ -497,6 +472,10 @@ package com.brockw.stickwar.engine.Ai
       private function getNearbyBossAssassinLeader() : Ninja
       {
          var ally:Unit = null;
+         if(unit.team != null && unit.team.game != null && this.cachedNearbyBossLeaderFrame == unit.team.game.frame)
+         {
+            return this.cachedNearbyBossLeader;
+         }
          for each(ally in unit.team.unitGroups[Unit.U_NINJA])
          {
             if(!(ally is Ninja) || ally == unit || !ally.isAlive())
@@ -513,102 +492,36 @@ package com.brockw.stickwar.engine.Ai
             }
             if(Math.abs(ally.px - unit.px) <= BOSS_SQUAD_RADIUS_X && Math.abs(ally.py - unit.py) <= BOSS_SQUAD_RADIUS_Y)
             {
-               return Ninja(ally);
+               this.cachedNearbyBossLeader = Ninja(ally);
+               if(unit.team != null && unit.team.game != null)
+               {
+                  this.cachedNearbyBossLeaderFrame = unit.team.game.frame;
+               }
+               return this.cachedNearbyBossLeader;
             }
+         }
+         this.cachedNearbyBossLeader = null;
+         if(unit.team != null && unit.team.game != null)
+         {
+            this.cachedNearbyBossLeaderFrame = unit.team.game.frame;
          }
          return null;
       }
 
-      private function getBossPriorityCandidates() : Array
-      {
-         var enemy:Unit = null;
-         var candidates:Array = [];
-         var inserted:Boolean = false;
-         var i:int = 0;
-         var priority:int = 0;
-         for each(enemy in unit.team.enemyTeam.units)
-         {
-            if(enemy == null || !enemy.isAlive() || !enemy.isTargetable())
-            {
-               continue;
-            }
-            priority = this.getBossTargetPriority(enemy);
-            inserted = false;
-            for(i = 0; i < candidates.length; i++)
-            {
-               if(priority < this.getBossTargetPriority(candidates[i]))
-               {
-                  candidates.splice(i,0,enemy);
-                  inserted = true;
-                  break;
-               }
-            }
-            if(!inserted)
-            {
-               candidates.push(enemy);
-            }
-         }
-         return candidates;
-      }
-
       private function getBossSquadTargetForLeader(leader:Ninja) : Unit
       {
-         var candidates:Array = this.getBossPriorityCandidates();
-         var samePriority:Array = [];
-         var bestPriority:int = 0;
-         var squadIndex:int = 0;
-         var i:int = 0;
-         if(candidates.length == 0)
+         var target:Unit = null;
+         if(leader == null || !(leader.ai is NinjaAi))
          {
             return null;
          }
-         bestPriority = this.getBossTargetPriority(candidates[0]);
-         for(i = 0; i < candidates.length; i++)
-         {
-            if(this.getBossTargetPriority(candidates[i]) != bestPriority)
-            {
-               break;
-            }
-            samePriority.push(candidates[i]);
-         }
-         squadIndex = this.getBossSquadIndex(leader);
-         if(samePriority.length > 1)
-         {
-            return samePriority[squadIndex % samePriority.length];
-         }
-         if(candidates.length > 1)
-         {
-            return candidates[1 + squadIndex % (candidates.length - 1)];
-         }
-         return candidates[0];
-      }
-
-      private function getBossSquadIndex(leader:Ninja) : int
-      {
-         var ally:Unit = null;
-         var index:int = 0;
-         for each(ally in unit.team.unitGroups[Unit.U_NINJA])
-         {
-            if(!(ally is Ninja) || ally == leader || !ally.isAlive())
-            {
-               continue;
-            }
-            if(Math.abs(ally.px - leader.px) > BOSS_SQUAD_RADIUS_X || Math.abs(ally.py - leader.py) > BOSS_SQUAD_RADIUS_Y)
-            {
-               continue;
-            }
-            if(ally == unit)
-            {
-               return index;
-            }
-            ++index;
-         }
-         return 0;
+         target = NinjaAi(leader.ai).getClosestTarget();
+         return target != null && target.isAlive() && target.isTargetable() ? target : null;
       }
 
       private function getBossSquadFlankYOffset(leader:Ninja, target:Unit) : Number
       {
-         var index:int = this.getBossSquadIndex(leader) % 3;
+         var index:int = unit.id % 3;
          if(index == 0)
          {
             return this.getBossFlankYOffset(target) - 35;
@@ -620,23 +533,6 @@ package com.brockw.stickwar.engine.Ai
          return this.getBossFlankYOffset(target);
       }
 
-      private function countLocalMeleeDefenders() : int
-      {
-         var ally:Unit = null;
-         var count:int = 0;
-         for each(ally in unit.team.units)
-         {
-            if(ally == null || !ally.isAlive() || ally.isGarrisoned)
-            {
-               continue;
-            }
-            if((ally.type == Unit.U_SWORDWRATH || ally.type == Unit.U_SPEARTON || ally.type == Unit.U_NINJA) && Math.abs(ally.px - unit.team.statue.px) < 220)
-            {
-               ++count;
-            }
-         }
-         return count;
-      }
    }
 }
 

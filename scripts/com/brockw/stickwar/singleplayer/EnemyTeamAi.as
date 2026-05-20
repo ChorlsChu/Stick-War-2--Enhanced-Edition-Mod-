@@ -29,6 +29,10 @@ package com.brockw.stickwar.singleplayer
       private var lastEnemyAliveCount:int;
 
       private var lastEnemyAggressionBand:int;
+
+      private var lastOwnArmyChangeVersion:int;
+
+      private var lastEnemyArmyChangeVersion:int;
       
       public function EnemyTeamAi(team:Team, main:BaseMain, game:StickWar, isCreatingUnits:* = true)
       {
@@ -40,6 +44,8 @@ package com.brockw.stickwar.singleplayer
          this.lastOwnAliveCount = -1;
          this.lastEnemyAliveCount = -1;
          this.lastEnemyAggressionBand = -1;
+         this.lastOwnArmyChangeVersion = -1;
+         this.lastEnemyArmyChangeVersion = -1;
       }
       
       public function update(game:StickWar) : void
@@ -48,7 +54,7 @@ package com.brockw.stickwar.singleplayer
          this.team.enemyTeam.calculateStatistics();
          this.updateMiners(game);
          this.rebalanceMiners(game);
-         this.updateStrategyDirtyState();
+         this.updateStrategyDirtyState(game);
          if(this.shouldUpdateGlobalStrategy(game))
          {
             this.updateGlobalStrategy(game);
@@ -390,32 +396,17 @@ package com.brockw.stickwar.singleplayer
          return this.requiresPerFrameGlobalStrategy(game) || this.strategyDirty;
       }
 
-      private function updateStrategyDirtyState() : void
+      private function updateStrategyDirtyState(game:StickWar) : void
       {
-         var unit:Unit = null;
-         var ownAliveCount:int = 0;
-         var enemyAliveCount:int = 0;
          var enemyAggressionBand:int = this.getEnemyAggressionBand();
-         for each(unit in this.team.units)
-         {
-            if(unit != null && unit.isAlive())
-            {
-               ++ownAliveCount;
-            }
-         }
-         for each(unit in this.team.enemyTeam.units)
-         {
-            if(unit != null && unit.isAlive())
-            {
-               ++enemyAliveCount;
-            }
-         }
-         if(this.lastOwnAliveCount != ownAliveCount || this.lastEnemyAliveCount != enemyAliveCount || this.lastEnemyAggressionBand != enemyAggressionBand)
+         var ownArmyChangeVersion:int = this.team.armyChangeVersion;
+         var enemyArmyChangeVersion:int = this.team.enemyTeam.armyChangeVersion;
+         if(this.lastOwnArmyChangeVersion != ownArmyChangeVersion || this.lastEnemyArmyChangeVersion != enemyArmyChangeVersion || this.lastEnemyAggressionBand != enemyAggressionBand)
          {
             this.strategyDirty = true;
          }
-         this.lastOwnAliveCount = ownAliveCount;
-         this.lastEnemyAliveCount = enemyAliveCount;
+         this.lastOwnArmyChangeVersion = ownArmyChangeVersion;
+         this.lastEnemyArmyChangeVersion = enemyArmyChangeVersion;
          this.lastEnemyAggressionBand = enemyAggressionBand;
       }
 

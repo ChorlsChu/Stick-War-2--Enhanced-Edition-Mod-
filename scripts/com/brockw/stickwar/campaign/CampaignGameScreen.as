@@ -48,6 +48,8 @@ package com.brockw.stickwar.campaign
 
       private var shadowrathLastAttackState:int;
 
+      private var cachedDisguisedShadowrathCount:int;
+
       private static const SHADOWRATH_LEVEL_TITLE:String = "Silent Assassins: Ninjas Declare War";
 
       private static const SHADOWRATH_REVEAL_RANGE_X:Number = 120;
@@ -61,6 +63,8 @@ package com.brockw.stickwar.campaign
       private static const SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES:int = 30 * 12;
 
       private static const SHADOWRATH_INITIAL_DISGUISE_COOLDOWN_FRAMES:int = 30 * 10;
+
+      private static const SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES:int = 5;
       
       public function CampaignGameScreen(main:BaseMain)
       {
@@ -243,6 +247,7 @@ package com.brockw.stickwar.campaign
          this.shadowrathDisguiseLockUntil = {};
          this.shadowrathSeenForInitialLock = {};
          this.shadowrathLastAttackState = -1;
+         this.cachedDisguisedShadowrathCount = 0;
          if(game.teamB.type == Team.T_CHAOS)
          {
             game.soundManager.playSoundInBackground("chaosInGame");
@@ -666,13 +671,13 @@ package com.brockw.stickwar.campaign
       {
          var unit:Unit = null;
          var snapshot:Array = null;
+         var disguisedCount:int = 0;
          if(!this.isShadowrathDisguiseLevelActive() || game == null || game.teamB == null)
          {
             return;
          }
          this.updateShadowrathDisguiseCooldowns();
          this.processShadowrathRevealQueue();
-         this.applyInitialShadowrathSpawnLocks();
          if(this.shadowrathLastAttackState != Team.G_DEFEND && game.teamB.currentAttackState == Team.G_DEFEND)
          {
             this.applyShadowrathInitialDisguiseCooldown();
@@ -683,22 +688,25 @@ package com.brockw.stickwar.campaign
             this.queueRevealAllShadowrathFakeMiners();
             return;
          }
+         if(game.frame % SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES != 0)
+         {
+            return;
+         }
+         this.applyInitialShadowrathSpawnLocks();
          this.resolveShadowrathFakeMinerPriority();
          snapshot = game.teamB.units.concat();
          for each(unit in snapshot)
          {
             if(unit is Miner && Miner(unit).isShadowrathDisguise)
             {
-               if(this.shouldRevealShadowrathFakeMiner(Miner(unit)))
-               {
-                  this.startShadowrathRevealChain(Miner(unit));
-               }
+               ++disguisedCount;
             }
             else if(unit is Ninja && this.canShadowrathDisguise(Ninja(unit)))
             {
                this.tryDisguiseShadowrath(Ninja(unit));
             }
          }
+         this.cachedDisguisedShadowrathCount = disguisedCount;
       }
 
       private function updateShadowrathDisguiseCooldowns() : void
@@ -788,39 +796,13 @@ package com.brockw.stickwar.campaign
          }
       }
 
-      private function shouldRevealShadowrathFakeMiner(miner:Miner) : Boolean
+      public function onShadowrathFakeMinerDamaged(miner:Miner) : void
       {
-         var enemy:Unit = null;
-         var isTravellingToFakeSlot:Boolean = false;
-         if(miner == null || !miner.isAlive())
+         if(miner == null || game == null || game.teamB == null || !this.isShadowrathDisguiseLevelActive() || !miner.isShadowrathDisguise || miner.team != game.teamB)
          {
-            return false;
+            return;
          }
-         isTravellingToFakeSlot = MinerAi(miner.ai).targetOre != null;
-         if(miner.health < miner.maxHealth)
-         {
-            return true;
-         }
-         if(!isTravellingToFakeSlot && Math.abs(miner.px - miner.team.homeX) > SHADOWRATH_DEFENSE_RADIUS)
-         {
-            return true;
-         }
-         for each(enemy in miner.team.enemyTeam.units)
-         {
-            if(enemy == null || !enemy.isAlive())
-            {
-               continue;
-            }
-            if(Math.abs(enemy.px - miner.px) <= SHADOWRATH_REVEAL_RANGE_X && Math.abs(enemy.py - miner.py) <= SHADOWRATH_REVEAL_RANGE_Y)
-            {
-               return true;
-            }
-            if(Math.abs(enemy.px - miner.team.homeX) < SHADOWRATH_DEFENSE_RADIUS - 120)
-            {
-               return true;
-            }
-         }
-         return false;
+         this.startShadowrathRevealChain(miner);
       }
 
       private function canShadowrathDisguise(ninja:Ninja) : Boolean
@@ -892,6 +874,7 @@ package com.brockw.stickwar.campaign
          }
          game.teamB.removeUnitCompletely(ninja,game);
          delete this.shadowrathDisguiseCooldowns[ninja.id];
+         ++this.cachedDisguisedShadowrathCount;
          return true;
       }
 
@@ -919,6 +902,10 @@ package com.brockw.stickwar.campaign
          ninja.health = Math.max(1,ninja.maxHealth * healthRatio);
          game.projectileManager.initStealthWallExplosion(ninja.px,ninja.py,game.teamB);
          game.teamB.removeUnitCompletely(miner,game);
+         if(this.cachedDisguisedShadowrathCount > 0)
+         {
+            --this.cachedDisguisedShadowrathCount;
+         }
          attackMove = new AttackMoveCommand(game);
          attackMove.type = UnitCommand.ATTACK_MOVE;
          attackMove.goalX = team.statue.px;
@@ -1350,20 +1337,11 @@ package com.brockw.stickwar.campaign
 
       public function getDisguisedShadowrathCount() : int
       {
-         var unit:Unit = null;
-         var count:int = 0;
          if(game == null || game.teamB == null)
          {
             return 0;
          }
-         for each(unit in game.teamB.units)
-         {
-            if(unit is Miner && Miner(unit).isShadowrathDisguise && unit.isAlive())
-            {
-               ++count;
-            }
-         }
-         return count;
+         return this.cachedDisguisedShadowrathCount;
       }
 
       public function revealShadowrathDisguises(limit:int = -1) : int
