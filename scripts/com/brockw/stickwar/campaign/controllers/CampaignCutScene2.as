@@ -43,6 +43,10 @@ package com.brockw.stickwar.campaign.controllers
       private static const LOW_PHASE_SUMMON_DELAY:int = 30 * 65;
 
       private static const MEDUSA_SUMMON_CAP:int = 8;
+
+      private static const MEDUSA_SUMMON_CLEANUP_INTERVAL:int = 30;
+
+      private static const MEDUSA_ENGAGEMENT_CHECK_INTERVAL:int = 10;
       
       private var state:int;
       
@@ -67,6 +71,14 @@ package com.brockw.stickwar.campaign.controllers
       private var medusaSummons:Dictionary;
 
       private var hasIssuedBossAttack:Boolean;
+
+      private var activeMedusaSummonCount:int;
+
+      private var nextSummonCleanupFrame:int;
+
+      private var isMedusaEngaged:Boolean;
+
+      private var nextEngagementCheckFrame:int;
       
       public function CampaignCutScene2(gameScreen:GameScreen)
       {
@@ -81,6 +93,10 @@ package com.brockw.stickwar.campaign.controllers
          this.hasLowPhaseTransitionWave = false;
          this.medusaSummons = new Dictionary();
          this.hasIssuedBossAttack = false;
+         this.activeMedusaSummonCount = 0;
+         this.nextSummonCleanupFrame = 0;
+         this.isMedusaEngaged = false;
+         this.nextEngagementCheckFrame = 0;
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -184,6 +200,10 @@ package com.brockw.stickwar.campaign.controllers
                this.hasMidPhaseTransitionWave = false;
                this.hasLowPhaseTransitionWave = false;
                this.medusaSummons = new Dictionary();
+               this.activeMedusaSummonCount = 0;
+               this.nextSummonCleanupFrame = gameScreen.game.frame + MEDUSA_SUMMON_CLEANUP_INTERVAL;
+               this.isMedusaEngaged = false;
+               this.nextEngagementCheckFrame = gameScreen.game.frame;
                spawn = [];
                spawn.push(Unit.U_MINER);
                spawn.push(Unit.U_MINER);
@@ -205,8 +225,7 @@ package com.brockw.stickwar.campaign.controllers
          {
             if(!this.medusa.isAlive())
             {
-               this.state = S_WAIT_FOR_END;
-               this.counter = 0;
+               this.onMedusaBossDied();
             }
             else
             {
@@ -233,31 +252,21 @@ package com.brockw.stickwar.campaign.controllers
 
       private function updateMedusaBossFight(gameScreen:GameScreen) : void
       {
-         var phase:int = 0;
-         var target:Unit = null;
          if(this.medusa == null || !this.medusa.isAlive())
          {
             return;
          }
-         this.cleanupMedusaSummons(gameScreen.game);
-         phase = this.getMedusaPhase();
-         if(phase != this.medusaPhase)
+         if(gameScreen.game.frame >= this.nextSummonCleanupFrame)
          {
-            this.medusaPhase = phase;
-            this.nextSummonFrame = gameScreen.game.frame + this.getSummonDelayForPhase(phase);
-            if(phase == PHASE_MID && !this.hasMidPhaseTransitionWave)
-            {
-               this.hasMidPhaseTransitionWave = true;
-               this.spawnMedusaWave(gameScreen,this.getMidPhaseWave(),true);
-            }
-            else if(phase == PHASE_LOW && !this.hasLowPhaseTransitionWave)
-            {
-               this.hasLowPhaseTransitionWave = true;
-               this.spawnMedusaWave(gameScreen,this.getLowPhaseTransitionWave(),true);
-            }
+            this.cleanupMedusaSummons(gameScreen.game);
+            this.nextSummonCleanupFrame = gameScreen.game.frame + MEDUSA_SUMMON_CLEANUP_INTERVAL;
          }
-         target = this.medusa.ai.getClosestTarget();
-         if(target == null || Math.abs(target.px - this.medusa.px) > 1200)
+         if(gameScreen.game.frame >= this.nextEngagementCheckFrame)
+         {
+            this.isMedusaEngaged = this.getIsMedusaEngaged();
+            this.nextEngagementCheckFrame = gameScreen.game.frame + MEDUSA_ENGAGEMENT_CHECK_INTERVAL;
+         }
+         if(!this.isMedusaEngaged)
          {
             return;
          }
@@ -265,16 +274,16 @@ package com.brockw.stickwar.campaign.controllers
          {
             return;
          }
-         if(this.countActiveMedusaSummons(gameScreen.game) >= MEDUSA_SUMMON_CAP)
+         if(this.activeMedusaSummonCount >= MEDUSA_SUMMON_CAP)
          {
             this.nextSummonFrame = gameScreen.game.frame + 30 * 5;
             return;
          }
-         if(phase == PHASE_HIGH)
+         if(this.medusaPhase == PHASE_HIGH)
          {
             this.spawnMedusaWave(gameScreen,this.getHighPhaseWave());
          }
-         else if(phase == PHASE_MID)
+         else if(this.medusaPhase == PHASE_MID)
          {
             this.spawnMedusaWave(gameScreen,this.getMidPhaseWave());
          }
@@ -282,7 +291,7 @@ package com.brockw.stickwar.campaign.controllers
          {
             this.spawnMedusaWave(gameScreen,this.getLowPhaseRepeatWave());
          }
-         this.nextSummonFrame = gameScreen.game.frame + this.getSummonDelayForPhase(phase);
+         this.nextSummonFrame = gameScreen.game.frame + this.getSummonDelayForPhase(this.medusaPhase);
       }
 
       private function getHighPhaseWave() : Array
@@ -354,7 +363,7 @@ package com.brockw.stickwar.campaign.controllers
          {
             return;
          }
-         if(!ignoreCap && this.countActiveMedusaSummons(gameScreen.game) >= MEDUSA_SUMMON_CAP)
+         if(!ignoreCap && this.activeMedusaSummonCount >= MEDUSA_SUMMON_CAP)
          {
             return;
          }
@@ -362,7 +371,7 @@ package com.brockw.stickwar.campaign.controllers
          gameScreen.game.soundManager.playSoundFullVolumeRandom("GhostTower",2);
          for(i = 0; i < unitTypes.length; i++)
          {
-            if(!ignoreCap && this.countActiveMedusaSummons(gameScreen.game) >= MEDUSA_SUMMON_CAP)
+            if(!ignoreCap && this.activeMedusaSummonCount >= MEDUSA_SUMMON_CAP)
             {
                return;
             }
@@ -389,6 +398,7 @@ package com.brockw.stickwar.campaign.controllers
             attackMoveCommand.realY = gameScreen.game.map.height / 2;
             newUnit.ai.setCommand(gameScreen.game,attackMoveCommand);
             this.medusaSummons[newUnit.id] = true;
+            ++this.activeMedusaSummonCount;
             gameScreen.game.projectileManager.initTowerSpawn(xPos,yPos,gameScreen.team.enemyTeam,0.6);
             gameScreen.game.projectileManager.initSpawnDrip(xPos,yPos,gameScreen.team.enemyTeam);
          }
@@ -403,6 +413,10 @@ package com.brockw.stickwar.campaign.controllers
             if(!(id in game.units))
             {
                delete this.medusaSummons[id];
+               if(this.activeMedusaSummonCount > 0)
+               {
+                  --this.activeMedusaSummonCount;
+               }
             }
             else
             {
@@ -410,25 +424,13 @@ package com.brockw.stickwar.campaign.controllers
                if(summon == null || !summon.isAlive() || summon.team != this.gameScreen.team.enemyTeam)
                {
                   delete this.medusaSummons[id];
+                  if(this.activeMedusaSummonCount > 0)
+                  {
+                     --this.activeMedusaSummonCount;
+                  }
                }
             }
          }
-      }
-
-      private function countActiveMedusaSummons(game:StickWar) : int
-      {
-         var id:* = undefined;
-         var count:int = 0;
-         var summon:Unit = null;
-         for(id in this.medusaSummons)
-         {
-            summon = game.units[id];
-            if(summon != null && summon.isAlive() && summon.team == this.gameScreen.team.enemyTeam)
-            {
-               ++count;
-            }
-         }
-         return count;
       }
 
       private function getMedusaPhase() : int
@@ -461,6 +463,66 @@ package com.brockw.stickwar.campaign.controllers
             return MID_PHASE_SUMMON_DELAY;
          }
          return LOW_PHASE_SUMMON_DELAY;
+      }
+
+      private function getIsMedusaEngaged() : Boolean
+      {
+         var target:Unit = null;
+         if(this.medusa == null || !this.medusa.isAlive())
+         {
+            return false;
+         }
+         target = this.medusa.ai.getClosestTarget();
+         return target != null && Math.abs(target.px - this.medusa.px) <= 1200;
+      }
+
+      public function onMedusaBossDamaged(previousHealth:Number, currentHealth:Number) : void
+      {
+         var phase:int = 0;
+         if(this.state != S_DONE || this.medusa == null || currentHealth <= 0 || currentHealth >= previousHealth)
+         {
+            return;
+         }
+         phase = this.getMedusaPhase();
+         if(phase != this.medusaPhase)
+         {
+            this.medusaPhase = phase;
+            this.nextSummonFrame = this.gameScreen.game.frame + this.getSummonDelayForPhase(phase);
+            if(phase == PHASE_MID && !this.hasMidPhaseTransitionWave)
+            {
+               this.hasMidPhaseTransitionWave = true;
+               this.spawnMedusaWave(this.gameScreen,this.getMidPhaseWave(),true);
+            }
+            else if(phase == PHASE_LOW && !this.hasLowPhaseTransitionWave)
+            {
+               this.hasLowPhaseTransitionWave = true;
+               this.spawnMedusaWave(this.gameScreen,this.getLowPhaseTransitionWave(),true);
+            }
+         }
+      }
+
+      public function onMedusaBossDied() : void
+      {
+         if(this.state != S_DONE)
+         {
+            return;
+         }
+         this.state = S_WAIT_FOR_END;
+         this.counter = 0;
+         this.isMedusaEngaged = false;
+      }
+
+      public function onTrackedMedusaSummonRemoved(unit:Unit) : void
+      {
+         if(unit == null || !(unit.id in this.medusaSummons))
+         {
+            return;
+         }
+         delete this.medusaSummons[unit.id];
+         if(this.activeMedusaSummonCount > 0)
+         {
+            --this.activeMedusaSummonCount;
+         }
       }
    }
 }

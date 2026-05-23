@@ -74,9 +74,60 @@ package com.brockw.stickwar.campaign
          MovieClip(this.mc.map.playbuttonflag.turning).mouseEnabled = false;
          MovieClip(this.mc.map.playbuttonflag.turning).mouseChildren = false;
          MovieClip(this.mc.map.playbuttonflag).buttonMode = true;
+         this.prewarmMapAssets();
          if(this.main.campaign.currentLevel == 0)
          {
             this.main.showScreen("campaignGameScreen",false,true);
+         }
+      }
+
+      private function prewarmMapAssets() : void
+      {
+         var frames:Array = [];
+         var turning:MovieClip = MovieClip(this.mc.map.playbuttonflag.turning);
+         var restoreOuterFrame:int = this.mc.currentFrame;
+         var restoreMapFrame:int = this.mc.map.currentFrame;
+         var restoreTurningFrame:int = turning.currentFrame;
+         var restoreTurningVisible:Boolean = turning.visible;
+         this.addPrewarmMapFrame(frames,this.main.campaign.currentLevel == 0 ? 1 : this.main.campaign.currentLevel);
+         this.addPrewarmMapFrame(frames,this.main.campaign.currentLevel + 1);
+         this.addPrewarmMapFrame(frames,this.main.campaign.currentLevel + 2);
+         this.runMapFramePrewarm(frames);
+         turning.visible = true;
+         turning.gotoAndStop(1);
+         if(turning.totalFrames > 1)
+         {
+            turning.gotoAndStop(2);
+         }
+         this.mc.gotoAndStop(restoreOuterFrame);
+         this.mc.map.gotoAndStop(restoreMapFrame);
+         turning.visible = restoreTurningVisible;
+         if(restoreTurningVisible)
+         {
+            turning.gotoAndPlay(restoreTurningFrame);
+         }
+         else
+         {
+            turning.gotoAndStop(restoreTurningFrame);
+         }
+      }
+
+      private function addPrewarmMapFrame(frames:Array, frame:int) : void
+      {
+         if(frame < 1 || frame > this.mc.totalFrames || frames.indexOf(frame) != -1)
+         {
+            return;
+         }
+         frames.push(frame);
+      }
+
+      private function runMapFramePrewarm(frames:Array) : void
+      {
+         var frame:int = 0;
+         for each(frame in frames)
+         {
+            this.mc.gotoAndStop(frame);
+            this.mc.map.gotoAndStop(frame);
          }
       }
       
@@ -174,10 +225,12 @@ package com.brockw.stickwar.campaign
                }
             }
             this.mc.map.playbuttonflag.turning.visible = false;
+            MovieClip(this.mc.map.playbuttonflag.turning).stop();
          }
          else
          {
             this.mc.map.playbuttonflag.turning.visible = true;
+            MovieClip(this.mc.map.playbuttonflag.turning).play();
             this.mc.bottomPanel.y += (BOTTOM_PANEL_TARGET_Y - this.mc.bottomPanel.y) * 1;
          }
          this.updateLevelDisplayText();

@@ -21,6 +21,7 @@ package com.brockw.stickwar.engine.Ai
          var targetDistance:Number = NaN;
          var rearLineX:Number = NaN;
          var shouldRearLineAdjust:Boolean = false;
+         var closestTarget:* = null;
          checkNextMove(game);
          if(unit.shouldStartCampaignBossEscape())
          {
@@ -44,15 +45,16 @@ package com.brockw.stickwar.engine.Ai
                rearLineX = Archer(unit).getBossRearLineX();
                if(Math.abs(rearLineX - unit.px) > BOSS_REAR_LINE_ADJUST_THRESHOLD)
                {
-                  if(this.getClosestTarget() != null)
+                  closestTarget = this.getClosestTarget();
+                  if(closestTarget != null)
                   {
-                     targetDistance = Math.abs(this.getClosestTarget().px - unit.px);
-                     if(!Archer(unit).inRange(this.getClosestTarget()) || unit.team.direction * unit.px > unit.team.direction * rearLineX)
+                     targetDistance = Math.abs(closestTarget.px - unit.px);
+                     if(!Archer(unit).inRange(closestTarget) || unit.team.direction * unit.px > unit.team.direction * rearLineX)
                      {
                         shouldRearLineAdjust = true;
                         Archer(unit).isBossMovementLocked = true;
                         unit.walk((rearLineX - unit.px) / 100,0,unit.team.direction);
-                        unit.faceDirection(this.getClosestTarget().px - unit.px);
+                        unit.faceDirection(closestTarget.px - unit.px);
                         return;
                      }
                   }

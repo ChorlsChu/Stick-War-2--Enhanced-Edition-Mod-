@@ -29,12 +29,33 @@ package com.brockw.stickwar.engine.Ai
       private var shouldRestoreAutoSpellCommand:Boolean;
       
       private var holdCommand:HoldCommand;
+
+      private var cachedNearestTargetAny:Unit;
+
+      private var cachedNearestTargetAnyFrame:int;
+
+      private var cachedNearestTargetInRange:Unit;
+
+      private var cachedNearestTargetInRangeFrame:int;
+
+      private var cachedNearestSharedTarget:Unit;
+
+      private var cachedNearestSharedTargetFrame:int;
+
+      private var cachedNearestSharedTargetMask:int;
       
       public function MagikillAi(s:Magikill)
       {
          super();
          unit = s;
          isNonAttackingMage = true;
+         this.cachedNearestTargetAny = null;
+         this.cachedNearestTargetAnyFrame = -1;
+         this.cachedNearestTargetInRange = null;
+         this.cachedNearestTargetInRangeFrame = -1;
+         this.cachedNearestSharedTarget = null;
+         this.cachedNearestSharedTargetFrame = -1;
+         this.cachedNearestSharedTargetMask = -1;
       }
       
       override public function update(game:StickWar) : void
@@ -266,6 +287,17 @@ package com.brockw.stickwar.engine.Ai
          var closest:Unit = null;
          var distance:Number = NaN;
          var minDistance:Number = Number.POSITIVE_INFINITY;
+         if(mustBeInRange)
+         {
+            if(this.cachedNearestTargetInRangeFrame == unit.team.game.frame)
+            {
+               return this.cachedNearestTargetInRange;
+            }
+         }
+         else if(this.cachedNearestTargetAnyFrame == unit.team.game.frame)
+         {
+            return this.cachedNearestTargetAny;
+         }
          for each(candidate in unit.team.enemyTeam.units)
          {
             if(candidate == null || !candidate.isTargetable())
@@ -306,13 +338,30 @@ package com.brockw.stickwar.engine.Ai
          }
          if(closest != null)
          {
+            this.cacheNearestEnemyTarget(closest,mustBeInRange);
             return closest;
          }
          if(!mustBeInRange || this.canCastWithoutMoving(command,unit.team.enemyTeam.statue))
          {
+            this.cacheNearestEnemyTarget(unit.team.enemyTeam.statue,mustBeInRange);
             return unit.team.enemyTeam.statue;
          }
+         this.cacheNearestEnemyTarget(null,mustBeInRange);
          return null;
+      }
+
+      private function cacheNearestEnemyTarget(target:Unit, mustBeInRange:Boolean) : void
+      {
+         if(mustBeInRange)
+         {
+            this.cachedNearestTargetInRange = target;
+            this.cachedNearestTargetInRangeFrame = unit.team.game.frame;
+         }
+         else
+         {
+            this.cachedNearestTargetAny = target;
+            this.cachedNearestTargetAnyFrame = unit.team.game.frame;
+         }
       }
 
       private function canCastWithoutMoving(command:UnitCommand, target:Unit) : Boolean
@@ -453,6 +502,11 @@ package com.brockw.stickwar.engine.Ai
          var closest:Unit = null;
          var distance:Number = NaN;
          var minDistance:Number = Number.POSITIVE_INFINITY;
+         var mask:int = (useNuke ? 1 : 0) | (useStun ? 2 : 0) | (usePoison ? 4 : 0);
+         if(this.cachedNearestSharedTargetFrame == unit.team.game.frame && this.cachedNearestSharedTargetMask == mask)
+         {
+            return this.cachedNearestSharedTarget;
+         }
          for each(candidate in unit.team.enemyTeam.units)
          {
             if(candidate == null || !candidate.isTargetable())
@@ -493,13 +547,23 @@ package com.brockw.stickwar.engine.Ai
          }
          if(closest != null)
          {
+            this.cacheNearestSharedTarget(closest,mask);
             return closest;
          }
          if(this.canCastAllWithoutMoving(unit.team.enemyTeam.statue,useNuke,useStun,usePoison))
          {
+            this.cacheNearestSharedTarget(unit.team.enemyTeam.statue,mask);
             return unit.team.enemyTeam.statue;
          }
+         this.cacheNearestSharedTarget(null,mask);
          return null;
+      }
+
+      private function cacheNearestSharedTarget(target:Unit, mask:int) : void
+      {
+         this.cachedNearestSharedTarget = target;
+         this.cachedNearestSharedTargetFrame = unit.team.game.frame;
+         this.cachedNearestSharedTargetMask = mask;
       }
 
       private function canCastAllWithoutMoving(target:Unit, useNuke:Boolean, useStun:Boolean, usePoison:Boolean) : Boolean

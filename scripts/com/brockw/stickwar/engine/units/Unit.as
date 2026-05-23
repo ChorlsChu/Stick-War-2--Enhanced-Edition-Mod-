@@ -2,6 +2,7 @@ package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
    import com.brockw.stickwar.campaign.CampaignGameScreen;
+   import com.brockw.stickwar.campaign.controllers.CampaignCutScene2;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.UnitAi;
    import com.brockw.stickwar.engine.Ai.command.*;
@@ -1343,6 +1344,8 @@ package com.brockw.stickwar.engine.units
       
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
+         var campaignScreen:CampaignGameScreen = null;
+         var medusaController:CampaignCutScene2 = null;
          var dmg:Number = NaN;
          var previousHealth:Number = this._health;
          if(this._campaignBossEscaping && (this.type == U_SPEARTON || this.type == U_ARCHER || this.type == U_NINJA))
@@ -1382,9 +1385,18 @@ package com.brockw.stickwar.engine.units
             dmg /= this.team.healthModifier;
             dmg *= this.team.enemyTeam.damageModifier;
             this._health -= dmg;
-            if(this is Miner && Miner(this).isShadowrathDisguise && this._health < previousHealth && this.team != null && this.team.game != null && this.team.game.gameScreen is CampaignGameScreen)
+            if(this.team != null && this.team.game != null && this.team.game.gameScreen is CampaignGameScreen)
             {
-               CampaignGameScreen(this.team.game.gameScreen).onShadowrathFakeMinerDamaged(Miner(this));
+               campaignScreen = CampaignGameScreen(this.team.game.gameScreen);
+               if(this is Miner && Miner(this).isShadowrathDisguise && this._health < previousHealth)
+               {
+                  campaignScreen.onShadowrathFakeMinerDamaged(Miner(this));
+               }
+               if(this is Medusa && campaignScreen.campaignController is CampaignCutScene2)
+               {
+                  medusaController = CampaignCutScene2(campaignScreen.campaignController);
+                  medusaController.onMedusaBossDamaged(previousHealth,this._health);
+               }
             }
             if(this._health <= 0)
             {
@@ -1410,6 +1422,10 @@ package com.brockw.stickwar.engine.units
                this.shadowSprite = null;
                this.healthBar.health = 0;
                this.healthBar.update();
+               if(this is Medusa && medusaController != null)
+               {
+                  medusaController.onMedusaBossDied();
+               }
             }
          }
       }

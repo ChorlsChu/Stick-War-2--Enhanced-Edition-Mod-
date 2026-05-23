@@ -1,6 +1,8 @@
 package com.brockw.stickwar.engine.Team
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
+   import com.brockw.stickwar.campaign.controllers.CampaignCutScene2;
    import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
@@ -1058,6 +1060,7 @@ package com.brockw.stickwar.engine.Team
          {
             delete this.garrisonedUnits[unit.id];
          }
+         this.notifyCampaignCutScene2SummonRemoved(unit,game);
          ++this._armyChangeVersion;
       }
       
@@ -1083,7 +1086,25 @@ package com.brockw.stickwar.engine.Team
          {
             delete this.garrisonedUnits[unit.id];
          }
+         this.notifyCampaignCutScene2SummonRemoved(unit,game);
          ++this._armyChangeVersion;
+      }
+
+      private function notifyCampaignCutScene2SummonRemoved(unit:Unit, game:StickWar) : void
+      {
+         var campaignScreen:CampaignGameScreen = null;
+         var controller:CampaignCutScene2 = null;
+         if(unit == null || game == null || !(game.gameScreen is CampaignGameScreen))
+         {
+            return;
+         }
+         campaignScreen = CampaignGameScreen(game.gameScreen);
+         if(!(campaignScreen.campaignController is CampaignCutScene2))
+         {
+            return;
+         }
+         controller = CampaignCutScene2(campaignScreen.campaignController);
+         controller.onTrackedMedusaSummonRemoved(unit);
       }
       
       protected function singlePlayerDebugInputSwitch(userInterface:UserInterface, unitType:int, key:int) : void

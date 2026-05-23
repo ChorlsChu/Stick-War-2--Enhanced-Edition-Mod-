@@ -34,7 +34,7 @@ package com.brockw.stickwar.campaign
       private static const SCREEN_HEIGHT:int = 700;
       
       private static const SCREEN_WIDTH:int = 850;
-      
+
       private var isFirst:Boolean;
       
       private var mc:campaignMenuMc;

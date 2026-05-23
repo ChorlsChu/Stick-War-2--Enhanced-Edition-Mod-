@@ -1,6 +1,7 @@
 package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.Ore;
    import com.brockw.stickwar.engine.StickWar;
@@ -90,6 +91,15 @@ package com.brockw.stickwar.engine.units
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          var dmg:Number = NaN;
+         var campaignScreen:CampaignGameScreen = null;
+         if(game != null && game.gameScreen is CampaignGameScreen && team == game.teamB)
+         {
+            campaignScreen = CampaignGameScreen(game.gameScreen);
+            if(campaignScreen.isEnemyReinforcementShieldActive())
+            {
+               return;
+            }
+         }
          if(isTargetable())
          {
             dmg = 0;

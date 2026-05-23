@@ -34,7 +34,9 @@ package com.brockw.stickwar.campaign
       
       public var doAiUpdates:Boolean;
 
-      private var hasTriggeredInsaneReinforcements:Boolean;
+      private var hasTriggeredCampaignReinforcements:Boolean;
+
+      private var enemyReinforcementShieldUntilFrame:int;
 
       private var shadowrathRevealQueue:Array;
 
@@ -65,6 +67,16 @@ package com.brockw.stickwar.campaign
       private static const SHADOWRATH_INITIAL_DISGUISE_COOLDOWN_FRAMES:int = 30 * 10;
 
       private static const SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES:int = 5;
+
+      private static const PREWARM_INTERVAL_FRAMES:int = 10;
+
+      private static const LEVEL_TITLE_REBELS_UNITED:String = "Rebels United";
+
+      private static const LEVEL_TITLE_MEDUSA_GATES:String = "Medusa's Gates: The Chaos Capital is in sight. ";
+
+      private var delayedLevelPrewarmQueue:Array;
+
+      private var nextLevelPrewarmFrame:int;
       
       public function CampaignGameScreen(main:BaseMain)
       {
@@ -189,6 +201,7 @@ package com.brockw.stickwar.campaign
          {
             game.teamB.gold = 0;
          }
+         this.initializeLevelPrewarm(level);
          game.teamA.spawnUnitGroup(level.player.startingUnits);
          game.teamB.spawnUnitGroup(level.oponent.startingUnits);
          if(main.campaign.difficultyLevel > Campaign.D_NORMAL || Team.getIdFromRaceName(main.campaign.getCurrentLevel().oponent.race) == Team.T_CHAOS)
@@ -240,7 +253,8 @@ package com.brockw.stickwar.campaign
          simulation.hasStarted = true;
          super.enter();
          this.doAiUpdates = true;
-         this.hasTriggeredInsaneReinforcements = false;
+         this.hasTriggeredCampaignReinforcements = false;
+         this.enemyReinforcementShieldUntilFrame = 0;
          this.shadowrathRevealQueue = [];
          this.shadowrathRevealQueued = {};
          this.shadowrathDisguiseCooldowns = {};
@@ -248,6 +262,7 @@ package com.brockw.stickwar.campaign
          this.shadowrathSeenForInitialLock = {};
          this.shadowrathLastAttackState = -1;
          this.cachedDisguisedShadowrathCount = 0;
+         this.nextLevelPrewarmFrame = PREWARM_INTERVAL_FRAMES;
          if(game.teamB.type == Team.T_CHAOS)
          {
             game.soundManager.playSoundInBackground("chaosInGame");
@@ -269,7 +284,8 @@ package com.brockw.stickwar.campaign
             game.teamB.statue.damage(0,100000000,null);
          }
          this.tryDebugSpawnBosses();
-         this.tryTriggerInsaneReinforcements();
+         this.tryTriggerCampaignReinforcements();
+         this.processDelayedLevelPrewarm();
          if(this.doAiUpdates)
          {
             this.enemyTeamAi.update(game);
@@ -373,7 +389,10 @@ package com.brockw.stickwar.campaign
          trace("Do the cleanup");
          this.enemyTeamAi = null;
          this.controller = null;
-         this.hasTriggeredInsaneReinforcements = false;
+         this.hasTriggeredCampaignReinforcements = false;
+         this.enemyReinforcementShieldUntilFrame = 0;
+         this.delayedLevelPrewarmQueue = null;
+         this.nextLevelPrewarmFrame = 0;
          super.cleanUp();
       }
       
@@ -382,11 +401,202 @@ package com.brockw.stickwar.campaign
          return false;
       }
 
-      private function tryTriggerInsaneReinforcements() : void
+      public function get campaignController() : CampaignController
       {
+         return this.controller;
+      }
+
+      private function initializeLevelPrewarm(level:Level) : void
+      {
+         var immediateUnits:Array = [];
+         var delayedUnits:Array = [];
+         if(level == null || game == null || game.unitFactory == null)
+         {
+            this.delayedLevelPrewarmQueue = [];
+            return;
+         }
+         this.addPrewarmUnitsFromSource(immediateUnits,level.player.startingUnits);
+         this.addPrewarmUnitsFromSource(immediateUnits,level.oponent.startingUnits);
+         this.addPrewarmUnitsFromSource(immediateUnits,this.getImmediatePrewarmUnitsForLevel(level.title));
+         this.addPrewarmUnitsFromSource(delayedUnits,this.getDelayedPrewarmUnitsForLevel(level.title));
+         this.removePrewarmDuplicatesAgainst(delayedUnits,immediateUnits);
+         this.runImmediateLevelPrewarm(immediateUnits);
+         this.delayedLevelPrewarmQueue = delayedUnits;
+      }
+
+      private function runImmediateLevelPrewarm(unitTypes:Array) : void
+      {
+         var unitType:int = 0;
+         if(unitTypes == null)
+         {
+            return;
+         }
+         for each(unitType in unitTypes)
+         {
+            this.prewarmUnitType(unitType);
+         }
+      }
+
+      private function processDelayedLevelPrewarm() : void
+      {
+         var nextType:int = 0;
+         if(this.delayedLevelPrewarmQueue == null || this.delayedLevelPrewarmQueue.length == 0 || game == null)
+         {
+            return;
+         }
+         if(game.frame < this.nextLevelPrewarmFrame)
+         {
+            return;
+         }
+         nextType = int(this.delayedLevelPrewarmQueue.shift());
+         this.prewarmUnitType(nextType);
+         this.nextLevelPrewarmFrame = game.frame + PREWARM_INTERVAL_FRAMES;
+      }
+
+      private function prewarmUnitType(unitType:int) : void
+      {
+         var warmUnit:Unit = null;
+         if(game == null || game.unitFactory == null || unitType <= 0)
+         {
+            return;
+         }
+         warmUnit = game.unitFactory.getUnit(unitType);
+         if(warmUnit == null)
+         {
+            return;
+         }
+         if(warmUnit.mc != null)
+         {
+            warmUnit.mc.gotoAndStop(1);
+         }
+         game.unitFactory.returnUnit(unitType,warmUnit);
+      }
+
+      private function addPrewarmUnitsFromSource(dest:Array, source:*) : void
+      {
+         var nested:* = undefined;
+         if(dest == null || source == null)
+         {
+            return;
+         }
+         if(source is Array)
+         {
+            for each(nested in source)
+            {
+               this.addPrewarmUnitsFromSource(dest,nested);
+            }
+            return;
+         }
+         this.addPrewarmUnitType(dest,int(source));
+      }
+
+      private function addPrewarmUnitType(dest:Array, unitType:int) : void
+      {
+         if(dest == null || !this.shouldPrewarmUnitType(unitType) || dest.indexOf(unitType) != -1)
+         {
+            return;
+         }
+         dest.push(unitType);
+      }
+
+      private function removePrewarmDuplicatesAgainst(dest:Array, existing:Array) : void
+      {
+         var i:int = 0;
+         if(dest == null || existing == null)
+         {
+            return;
+         }
+         i = dest.length - 1;
+         while(i >= 0)
+         {
+            if(existing.indexOf(dest[i]) != -1)
+            {
+               dest.splice(i,1);
+            }
+            i--;
+         }
+      }
+
+      private function shouldPrewarmUnitType(unitType:int) : Boolean
+      {
+         switch(unitType)
+         {
+            case Unit.U_SPEARTON:
+            case Unit.U_ARCHER:
+            case Unit.U_NINJA:
+            case Unit.U_MAGIKILL:
+            case Unit.U_MONK:
+            case Unit.U_BOMBER:
+            case Unit.U_GIANT:
+            case Unit.U_KNIGHT:
+            case Unit.U_DEAD:
+            case Unit.U_CAT:
+            case Unit.U_WINGIDON:
+            case Unit.U_SKELATOR:
+            case Unit.U_MEDUSA:
+            case Unit.U_ENSLAVED_GIANT:
+               return true;
+            default:
+               return false;
+         }
+      }
+
+      private function getImmediatePrewarmUnitsForLevel(title:String) : Array
+      {
+         switch(title)
+         {
+            case "Tutorial":
+               return [Unit.U_SPEARTON,Unit.U_ARCHER];
+            case "Blot out the sun: Archidons Declare War":
+               return [Unit.U_ARCHER];
+            case "Silent Assassins: Ninjas Declare War":
+               return [Unit.U_NINJA];
+            case "Magic in the Air: Wizards and monks Declare War ":
+               return [Unit.U_MAGIKILL,Unit.U_MONK];
+            case LEVEL_TITLE_REBELS_UNITED:
+               return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
+            case "Explosive War: Bombers Attack":
+               return [Unit.U_BOMBER,Unit.U_GIANT];
+            case "The Night is Dark: Juggerknights Attack":
+            case "Undead War: Deadly Deads Attack":
+               return [Unit.U_KNIGHT,Unit.U_DEAD];
+            case " 4 legged Fury: Crawlers Attack":
+               return [Unit.U_CAT,Unit.U_BOMBER];
+            case "Shadow of the moon: Eclipsors Attack.":
+               return [Unit.U_WINGIDON,Unit.U_KNIGHT];
+            case "Bone Pile: Marrowkai summon war":
+               return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_KNIGHT];
+            case LEVEL_TITLE_MEDUSA_GATES:
+               return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_GIANT,Unit.U_CAT,Unit.U_BOMBER];
+            default:
+               return [];
+         }
+      }
+
+      private function getDelayedPrewarmUnitsForLevel(title:String) : Array
+      {
+         var unitTypes:Array = [];
+         this.addPrewarmUnitsFromSource(unitTypes,this.getCampaignReinforcementsForLevel(title,Campaign.D_INSANE));
+         switch(title)
+         {
+            case LEVEL_TITLE_REBELS_UNITED:
+               this.addPrewarmUnitsFromSource(unitTypes,[Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK]);
+               break;
+            case "Explosive War: Bombers Attack":
+               this.addPrewarmUnitsFromSource(unitTypes,[Unit.U_BOMBER,Unit.U_GIANT]);
+               break;
+            case LEVEL_TITLE_MEDUSA_GATES:
+               this.addPrewarmUnitsFromSource(unitTypes,[Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_GIANT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_ENSLAVED_GIANT]);
+         }
+         return unitTypes;
+      }
+
+      private function tryTriggerCampaignReinforcements() : void
+      {
+         var difficulty:int = 0;
          var level:Level = null;
          var reinforcements:Array = null;
-         if(this.hasTriggeredInsaneReinforcements || main == null || main.campaign == null || main.campaign.difficultyLevel != Campaign.D_INSANE || game == null || game.teamB == null || game.teamB.statue == null)
+         if(this.hasTriggeredCampaignReinforcements || main == null || main.campaign == null || game == null || game.teamB == null || game.teamB.statue == null)
          {
             return;
          }
@@ -395,8 +605,9 @@ package com.brockw.stickwar.campaign
          {
             return;
          }
-         reinforcements = this.getInsaneReinforcementsForLevel(level.title);
-         this.hasTriggeredInsaneReinforcements = true;
+         difficulty = main.campaign.difficultyLevel;
+         reinforcements = this.getCampaignReinforcementsForLevel(level.title,difficulty);
+         this.hasTriggeredCampaignReinforcements = true;
          if(reinforcements == null || reinforcements.length == 0)
          {
             return;
@@ -404,33 +615,129 @@ package com.brockw.stickwar.campaign
          this.spawnEnemyReinforcements(reinforcements);
       }
 
-      private function getInsaneReinforcementsForLevel(title:String) : Array
+      private function getCampaignReinforcementsForLevel(title:String, difficulty:int) : Array
       {
          switch(title)
          {
             case "Tutorial":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_SPEARTON];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_SPEARTON,Unit.U_SPEARTON];
+               }
                return [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON];
             case "Blot out the sun: Archidons Declare War":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_SWORDWRATH];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
+               }
                return [Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
             case "Silent Assassins: Ninjas Declare War":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_NINJA,Unit.U_SWORDWRATH];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
+               }
                return [Unit.U_NINJA,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
             case "Magic in the Air: Wizards and monks Declare War ":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SWORDWRATH];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_MONK,Unit.U_SWORDWRATH];
+               }
                return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_MONK,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
             case "Rebels United":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_ARCHER];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA];
+               }
                return [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
             case "Explosive War: Bombers Attack":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_BOMBER,Unit.U_GIANT];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_GIANT];
+               }
                return [Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_GIANT];
             case "The Night is Dark: Juggerknights Attack":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD];
+               }
                return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_DEAD];
             case "Undead War: Deadly Deads Attack":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT,Unit.U_KNIGHT];
+               }
                return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT,Unit.U_KNIGHT];
             case " 4 legged Fury: Crawlers Attack":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_BOMBER];
+               }
                return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_BOMBER];
             case "Shadow of the moon: Eclipsors Attack.":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT];
+               }
                return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT,Unit.U_KNIGHT];
             case "Bone Pile: Marrowkai summon war":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_KNIGHT];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
+               }
                return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
             case "Medusa's Gates: The Chaos Capital is in sight. ":
+               if(difficulty == Campaign.D_NORMAL)
+               {
+                  return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_WINGIDON];
+               }
+               if(difficulty == Campaign.D_HARD)
+               {
+                  return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_WINGIDON];
+               }
                return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON];
             default:
                return null;
@@ -479,6 +786,7 @@ package com.brockw.stickwar.campaign
          }
          unitTypes = reinforcementUnits;
          totalRows = Math.ceil(unitTypes.length / 4);
+         this.activateEnemyReinforcementShield();
          this.playReinforcementSpawnEffects();
          for(i = 0; i < unitTypes.length; i++)
          {
@@ -530,6 +838,38 @@ package com.brockw.stickwar.campaign
             attackMoveCommand.realY = game.map.height / 2;
             newUnit.ai.setCommand(game,attackMoveCommand);
          }
+      }
+
+      private function activateEnemyReinforcementShield() : void
+      {
+         var shieldFrames:int = this.getEnemyReinforcementShieldFrames();
+         if(game == null || game.teamB == null || game.teamB.statue == null || shieldFrames <= 0)
+         {
+            return;
+         }
+         this.enemyReinforcementShieldUntilFrame = game.frame + shieldFrames;
+      }
+
+      private function getEnemyReinforcementShieldFrames() : int
+      {
+         if(main == null || main.campaign == null)
+         {
+            return 0;
+         }
+         if(main.campaign.difficultyLevel == Campaign.D_NORMAL)
+         {
+            return 105;
+         }
+         if(main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return 135;
+         }
+         return 150;
+      }
+
+      public function isEnemyReinforcementShieldActive() : Boolean
+      {
+         return game != null && game.teamB != null && game.teamB.statue != null && game.frame < this.enemyReinforcementShieldUntilFrame;
       }
 
       private function shouldPromoteWestwindBoss(unitType:int, spawnedCount:int) : Boolean
@@ -1157,6 +1497,53 @@ package com.brockw.stickwar.campaign
          {
             this.triggerDebugShadowrathDisguise();
          }
+         else if(userInterface.keyBoardState.isPressed(51))
+         {
+            this.spawnDebugAlliedSpeartonAndArcher();
+         }
+      }
+
+      private function spawnDebugAlliedSpeartonAndArcher() : void
+      {
+         var spearton:Unit = null;
+         var archer:Unit = null;
+         var spawnX:Number = NaN;
+         var spawnY:Number = NaN;
+         var attackMoveCommand:AttackMoveCommand = null;
+         if(game == null || game.teamA == null || game.teamB == null)
+         {
+            return;
+         }
+         spawnX = game.teamA.homeX + game.teamA.direction * 220;
+         spawnY = game.map.height / 2;
+         spearton = game.unitFactory.getUnit(Unit.U_SPEARTON);
+         game.teamA.spawn(spearton,game);
+         spearton.x = spearton.px = spawnX;
+         spearton.y = spearton.py = spawnY - 30;
+         game.teamA.population += spearton.population;
+         archer = game.unitFactory.getUnit(Unit.U_ARCHER);
+         game.teamA.spawn(archer,game);
+         archer.x = archer.px = spawnX - game.teamA.direction * 55;
+         archer.y = archer.py = spawnY + 30;
+         game.teamA.population += archer.population;
+         game.projectileManager.initTowerSpawn(spearton.px,spearton.py,game.teamA,0.6);
+         game.projectileManager.initTowerSpawn(archer.px,archer.py,game.teamA,0.6);
+         game.projectileManager.initSpawnDrip(spearton.px,spearton.py,game.teamA);
+         game.projectileManager.initSpawnDrip(archer.px,archer.py,game.teamA);
+         attackMoveCommand = new AttackMoveCommand(game);
+         attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
+         attackMoveCommand.goalX = game.teamB.statue.px;
+         attackMoveCommand.goalY = game.map.height / 2;
+         attackMoveCommand.realX = game.teamB.statue.px;
+         attackMoveCommand.realY = game.map.height / 2;
+         spearton.ai.setCommand(game,attackMoveCommand);
+         attackMoveCommand = new AttackMoveCommand(game);
+         attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
+         attackMoveCommand.goalX = game.teamB.statue.px;
+         attackMoveCommand.goalY = game.map.height / 2;
+         attackMoveCommand.realX = game.teamB.statue.px;
+         attackMoveCommand.realY = game.map.height / 2;
+         archer.ai.setCommand(game,attackMoveCommand);
       }
 
       private function spawnDebugBoss(unitType:int) : void

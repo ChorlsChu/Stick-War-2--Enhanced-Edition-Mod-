@@ -25,6 +25,7 @@ package com.brockw.stickwar.engine.Ai
       
       override public function update(game:StickWar) : void
       {
+         var monk:Monk = Monk(unit);
          var u:Unit = null;
          var poisoned:Unit = null;
          var range:Number = NaN;
@@ -37,20 +38,20 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-         if(Monk(unit).isBoss)
+         if(monk.isBoss)
          {
-            Monk(unit).isBossMovementLocked = false;
-            Monk(unit).tryBossRevive(game);
-            if(Monk(unit).isBusy())
+            monk.isBossMovementLocked = false;
+            monk.tryBossRevive(game);
+            if(monk.isBusy())
             {
-               Monk(unit).isBossMovementLocked = true;
+               monk.isBossMovementLocked = true;
             }
-            if(!Monk(unit).isBusy() && (currentCommand is AttackMoveCommand || currentCommand is StandCommand || currentCommand is HoldCommand))
+            if(!monk.isBusy() && (currentCommand is AttackMoveCommand || currentCommand is StandCommand || currentCommand is HoldCommand))
             {
-               rearLineX = Monk(unit).getBossRearLineX();
+               rearLineX = monk.getBossRearLineX();
                if(unit.team.direction * unit.px > unit.team.direction * rearLineX + 25)
                {
-                  Monk(unit).isBossMovementLocked = true;
+                  monk.isBossMovementLocked = true;
                   unit.walk((rearLineX - unit.px) / 100,0,unit.team.direction);
                   return;
                }
@@ -82,25 +83,25 @@ package com.brockw.stickwar.engine.Ai
             }
             else if(currentCommand.type == UnitCommand.CURE)
             {
-               Monk(unit).isCureToggled = !Monk(unit).isCureToggled;
+               monk.isCureToggled = !monk.isCureToggled;
                restoreMove(game);
                baseUpdate(game);
             }
             else if(currentCommand.type == UnitCommand.HEAL)
             {
-               Monk(unit).isHealToggled = !Monk(unit).isHealToggled;
+               monk.isHealToggled = !monk.isHealToggled;
                restoreMove(game);
                baseUpdate(game);
             }
             else if(currentCommand.type == UnitCommand.SLOW_DART)
             {
-               Monk(unit).slowDartSpell(UnitCommand(currentCommand).realX);
+               monk.slowDartSpell(UnitCommand(currentCommand).realX);
                nextMove(game);
             }
          }
          else
          {
-            if(unit.team.tech.isResearched(Tech.MONK_CURE) && Monk(unit).isCureToggled && !Monk(unit).isBusy() && Monk(unit).cureCooldown() == 0 && (currentCommand is AttackMoveCommand || currentCommand is StandCommand || currentCommand is HoldCommand))
+            if(unit.team.tech.isResearched(Tech.MONK_CURE) && monk.isCureToggled && !monk.isBusy() && monk.cureCooldown() == 0 && (currentCommand is AttackMoveCommand || currentCommand is StandCommand || currentCommand is HoldCommand))
             {
                this.inRange = null;
                if(cureCommand == null)
@@ -119,17 +120,17 @@ package com.brockw.stickwar.engine.Ai
                }
                if(this.inRange != null)
                {
-                  Monk(unit).cureSpell(this.inRange);
+                  monk.cureSpell(this.inRange);
                   return;
                }
             }
-            if(Monk(unit).isHealToggled && !Monk(unit).isBusy() && Monk(unit).healCooldown() == 0 && mayAttack == true)
+            if(monk.isHealToggled && !monk.isBusy() && monk.healCooldown() == 0 && mayAttack == true)
             {
-               if(Monk(unit).isBoss)
+               if(monk.isBoss)
                {
                   this.inRange = null;
                   game.spatialHash.mapInArea(unit.px - BOSS_PRIORITY_HEAL_RANGE,unit.py - BOSS_PRIORITY_HEAL_RANGE,unit.px + BOSS_PRIORITY_HEAL_RANGE,unit.py + BOSS_PRIORITY_HEAL_RANGE,this.priorityShadowrathHeal,false);
-                  if(this.inRange != null && Monk(unit).healSpell(this.inRange))
+                  if(this.inRange != null && monk.healSpell(this.inRange))
                   {
                      return;
                   }
@@ -139,7 +140,7 @@ package com.brockw.stickwar.engine.Ai
                game.spatialHash.mapInArea(unit.px - range,unit.py - range,unit.px + range,unit.py + range,this.lowestUnit,false);
                if(this.inRange != null && this.inRange.health != this.inRange.maxHealth)
                {
-                  if(Monk(unit).healSpell(this.inRange))
+                  if(monk.healSpell(this.inRange))
                   {
                   }
                   return;
