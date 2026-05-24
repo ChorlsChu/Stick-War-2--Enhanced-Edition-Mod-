@@ -2097,7 +2097,7 @@ package com.brockw.stickwar.engine.units
          }
          this._campaignBossEscapeLastPx = this.px;
          this._campaignBossEscapeLastPy = this.py;
-         if(this._campaignBossEscapeStuckFrames >= 30 * 2)
+         if(this._campaignBossEscapeStuckFrames >= 30)
          {
             this.x = this.px = garrisonInteriorX;
             this.y = this.py = game.map.height / 2;
