@@ -359,11 +359,7 @@ package com.brockw.stickwar.engine.units
             MovieClip(_mc.mc).gotoAndStop(1);
          }
          Util.animateMovieClip(_mc,0);
-         if(game.gameScreen is CampaignGameScreen)
-         {
-            setItem(_mc,"Default","Default","Bone Bag");
-         }
-         else if(!hasDefaultLoadout)
+         if(!hasDefaultLoadout)
          {
             setItem(_mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }

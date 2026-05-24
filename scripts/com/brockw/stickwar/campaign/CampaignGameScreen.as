@@ -279,11 +279,6 @@ package com.brockw.stickwar.campaign
       
       override public function update(evt:Event, timeDiff:Number) : void
       {
-         if(!main.isKongregate && main.isCampaignDebug && userInterface.keyBoardState.isDown(78) && userInterface.keyBoardState.isShift)
-         {
-            game.teamB.statue.damage(0,100000000,null);
-         }
-         this.tryDebugSpawnBosses();
          this.tryTriggerCampaignReinforcements();
          this.processDelayedLevelPrewarm();
          if(this.doAiUpdates)

@@ -112,6 +112,8 @@ package com.brockw.stickwar.campaign.controllers
       private var hasShownBuildSwordwrath:Boolean;
       
       private var hasSpawnedSpearton:Boolean;
+
+      private var hasIssuedPostTutorialAttack:Boolean;
       
       public function CampaignTutorial(gameScreen:GameScreen)
       {
@@ -127,6 +129,7 @@ package com.brockw.stickwar.campaign.controllers
          this.miniMessage = null;
          this.message = null;
          this.hasSpawnedSpearton = false;
+         this.hasIssuedPostTutorialAttack = false;
       }
       
       private function skipTutorialClick(e:Event) : void
@@ -196,7 +199,15 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(this.state == S_ALL_DONE || this.state > S_LAG)
          {
-            gameScreen.game.team.enemyTeam.attack(true);
+            if(!this.hasIssuedPostTutorialAttack)
+            {
+               gameScreen.game.team.enemyTeam.attack(true);
+               this.hasIssuedPostTutorialAttack = true;
+            }
+         }
+         else
+         {
+            this.hasIssuedPostTutorialAttack = false;
          }
          if(this.state == S_ALL_DONE)
          {

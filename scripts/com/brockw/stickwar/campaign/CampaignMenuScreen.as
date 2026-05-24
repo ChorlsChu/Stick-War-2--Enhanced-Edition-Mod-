@@ -7,11 +7,13 @@ package com.brockw.stickwar.campaign
    import com.brockw.stickwar.BaseMain;
    import flash.display.MovieClip;
    import flash.events.Event;
+   import flash.events.IOErrorEvent;
    import flash.events.MouseEvent;
    import flash.net.URLLoader;
    import flash.net.URLLoaderDataFormat;
    import flash.net.URLRequest;
    import flash.net.navigateToURL;
+   import flash.events.SecurityErrorEvent;
    import flash.system.Security;
    import flash.utils.Dictionary;
    import flash.utils.getTimer;
@@ -89,6 +91,8 @@ package com.brockw.stickwar.campaign
          urlLoader = new URLLoader();
          urlLoader.dataFormat = URLLoaderDataFormat.TEXT;
          urlLoader.addEventListener(Event.COMPLETE,this.handleComplete);
+         urlLoader.addEventListener(IOErrorEvent.IO_ERROR,this.handleIntroLinkLoadFailure);
+         urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR,this.handleIntroLinkSecurityFailure);
          urlLoader.load(urlRequest);
          this.youtubeLoader = new YoutubeLoader("w6q9EoFmu0w");
          addChild(this.youtubeLoader);
@@ -105,6 +109,14 @@ package com.brockw.stickwar.campaign
             this.youtubeLoader = new YoutubeLoader(link);
             addChild(this.youtubeLoader);
          }
+      }
+
+      private function handleIntroLinkLoadFailure(e:IOErrorEvent) : void
+      {
+      }
+
+      private function handleIntroLinkSecurityFailure(e:SecurityErrorEvent) : void
+      {
       }
       
       private function addNewButton(mc:MovieClip, timeDelay:Number, func:Function) : void

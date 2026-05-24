@@ -60,6 +60,7 @@ package com.brockw.stickwar.engine.Ai
       
       override public function update(game:StickWar) : void
       {
+         var magikill:Magikill = Magikill(unit);
          if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
@@ -70,9 +71,11 @@ package com.brockw.stickwar.engine.Ai
          }
          unit.isBusyForSpell = false;
          this.ensureCommands(game);
-         if(Magikill(unit).isBoss)
+         if(magikill.isBoss)
          {
-            Magikill(unit).tryBossSummonGuards(game);
+            this.updateBossGenericCasting(game,magikill);
+            baseUpdate(game);
+            return;
          }
          if(this.tryFinishInitialSpawnMove(game))
          {
@@ -122,6 +125,55 @@ package com.brockw.stickwar.engine.Ai
                return;
             }
             baseUpdate(game);
+         }
+      }
+
+      private function updateBossGenericCasting(game:StickWar, magikill:Magikill) : void
+      {
+         var target:Unit = null;
+         if(this.tryFinishInitialSpawnMove(game))
+         {
+            return;
+         }
+         if(magikill.tryBossSummonGuards(game))
+         {
+            return;
+         }
+         if(magikill.isBusy())
+         {
+            return;
+         }
+         target = this.getClosestTarget();
+         if(!Boolean(target))
+         {
+            return;
+         }
+         if(magikill.nukeCooldown() == 0)
+         {
+            this.nukeCommand.realX = target.px;
+            this.nukeCommand.realY = target.py;
+            if(this.nukeCommand.inRange(magikill))
+            {
+               magikill.nukeSpell(target.px,target.py);
+            }
+         }
+         else if(magikill.stunCooldown() == 0)
+         {
+            this.stunCommand.realX = target.px;
+            this.stunCommand.realY = target.py;
+            if(this.stunCommand.inRange(magikill))
+            {
+               magikill.stunSpell(target.px,target.py);
+            }
+         }
+         else if(unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && magikill.poisonDartCooldown() == 0)
+         {
+            this.poisonDartCommand.realX = target.px;
+            this.poisonDartCommand.realY = target.py;
+            if(this.poisonDartCommand.inRange(magikill))
+            {
+               magikill.poisonDartSpell(target.px,target.py);
+            }
          }
       }
       

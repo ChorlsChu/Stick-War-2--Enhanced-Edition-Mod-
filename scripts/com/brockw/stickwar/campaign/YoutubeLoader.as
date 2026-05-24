@@ -3,7 +3,9 @@ package com.brockw.stickwar.campaign
    import flash.display.Loader;
    import flash.display.MovieClip;
    import flash.events.Event;
+   import flash.events.IOErrorEvent;
    import flash.net.URLRequest;
+   import flash.events.SecurityErrorEvent;
    import flash.system.Security;
    
    public class YoutubeLoader extends MovieClip
@@ -19,6 +21,8 @@ package com.brockw.stickwar.campaign
       {
          var my_loader:Loader = null;
          var onLoaderInit:Function = null;
+         var onLoaderIoError:Function = null;
+         var onLoaderSecurityError:Function = null;
          var onError:Function = null;
          var onPlayerReady:Function = null;
          onLoaderInit = function(e:Event):void
@@ -33,6 +37,14 @@ package com.brockw.stickwar.campaign
             hadError = true;
             trace("YOUTUBE LOADER HAD ERROR");
          };
+         onLoaderIoError = function(e:IOErrorEvent):void
+         {
+            hadError = true;
+         };
+         onLoaderSecurityError = function(e:SecurityErrorEvent):void
+         {
+            hadError = true;
+         };
          onPlayerReady = function(e:Event):void
          {
             my_player.setSize(640,360);
@@ -44,6 +56,8 @@ package com.brockw.stickwar.campaign
          Security.allowDomain("www.youtube.com");
          this.ready = false;
          my_loader = new Loader();
+         my_loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,onLoaderIoError);
+         my_loader.contentLoaderInfo.addEventListener(SecurityErrorEvent.SECURITY_ERROR,onLoaderSecurityError);
          my_loader.load(new URLRequest("http://www.youtube.com/apiplayer?version=3"));
          my_loader.contentLoaderInfo.addEventListener(Event.INIT,onLoaderInit);
          this.hadError = false;

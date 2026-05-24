@@ -15,6 +15,10 @@ package com.brockw.stickwar.engine.units
    
    public class Medusa extends Unit
    {
+      private static const BOSS_CAPE_SKIN:String = "Snake Cape";
+
+      private static const BOSS_CROWN_SKIN:String = "Jewel Crown";
+
       private static const BOSS_REGEN_DELAY_FRAMES:int = 30 * 3;
 
       private static const BOSS_FALLBACK_DEFAULT_FRAMES:int = 30 * 2;
@@ -301,7 +305,12 @@ package com.brockw.stickwar.engine.units
             }
          }
          Util.animateMovieClip(_mc);
-         if(!hasDefaultLoadout)
+         if(this.isBossMedusa())
+         {
+            hasDefaultLoadout = true;
+            Medusa.setItem(_medusaMc(mc),"",BOSS_CAPE_SKIN,BOSS_CROWN_SKIN);
+         }
+         else if(!hasDefaultLoadout)
          {
             Medusa.setItem(_medusaMc(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }
@@ -339,6 +348,7 @@ package com.brockw.stickwar.engine.units
          healthBar.totalHealth = maxHealth;
          this.lastDamageFrame = team.game.frame;
          this.bossFallbackUntilFrame = 0;
+         hasDefaultLoadout = true;
          this.cure();
       }
 

@@ -92,9 +92,9 @@ package com.brockw.stickwar.engine.units
       {
          var dmg:Number = NaN;
          var campaignScreen:CampaignGameScreen = null;
-         if(game != null && game.gameScreen is CampaignGameScreen && team == game.teamB)
+         if(team != null && team.game != null && team.game.gameScreen is CampaignGameScreen && team == team.game.teamB)
          {
-            campaignScreen = CampaignGameScreen(game.gameScreen);
+            campaignScreen = CampaignGameScreen(team.game.gameScreen);
             if(campaignScreen.isEnemyReinforcementShieldActive())
             {
                return;

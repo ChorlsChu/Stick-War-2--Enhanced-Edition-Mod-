@@ -23,6 +23,12 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_SUMMON_RADIUS:Number = 220;
 
+      private static const BOSS_SUMMON_SPEARTON_MAX:int = 3;
+
+      private static const BOSS_SUMMON_SWORDWRATH_MAX:int = 2;
+
+      private static const BOSS_SUMMON_ARCHER_MAX:int = 2;
+
       private static const BOSS_BODYGUARD_RETURN_RADIUS:Number = 180;
 
       private static const BOSS_BODYGUARD_HARD_LEASH_RADIUS:Number = 260;
@@ -140,7 +146,7 @@ package com.brockw.stickwar.engine.units
          this.isStunning = false;
          this.isPoisonDarting = false;
          this.isSummoning = false;
-         this._autoCastMode = 0;
+         this._autoCastMode = 2;
          this._isOnInitialSpawnMove = true;
          this._isBoss = false;
          this.bossSummonCooldownFrames = 0;
@@ -507,7 +513,7 @@ package com.brockw.stickwar.engine.units
          this.hasDefaultLoadout = true;
          this.bossAbilitySpawnLockFrames = 30 * 2;
          this.damageToDeal *= 1.2;
-         this.autoCastMode = 0;
+         this.autoCastMode = 2;
       }
 
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
@@ -526,7 +532,7 @@ package com.brockw.stickwar.engine.units
 
       public function tryBossSummonGuards(game:StickWar) : Boolean
       {
-         if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossSummonCooldownFrames > 0 || this.countLivingBossSummons() >= 3 || !this.notInSpell())
+         if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossSummonCooldownFrames > 0 || !this.canBossSummonAnyGuardType() || !this.notInSpell())
          {
             return false;
          }
@@ -543,16 +549,22 @@ package com.brockw.stickwar.engine.units
       {
          var availableSummons:Array = [];
          var summonType:int = 0;
+         var summonCount:int = 0;
+         var i:int = 0;
          var newUnit:Unit = null;
-         if(this.countLivingBossSummons() >= 3)
+         if(!this.canBossSummonAnyGuardType())
          {
             return;
          }
-         if(this.countLivingBossSummonsByType(Unit.U_SWORDWRATH) < 2)
+         if(this.countLivingBossSummonsByType(Unit.U_SWORDWRATH) < BOSS_SUMMON_SWORDWRATH_MAX)
          {
             availableSummons.push(Unit.U_SWORDWRATH);
          }
-         if(this.countLivingBossSummonsByType(Unit.U_SPEARTON) < 1)
+         if(this.countLivingBossSummonsByType(Unit.U_ARCHER) < BOSS_SUMMON_ARCHER_MAX)
+         {
+            availableSummons.push(Unit.U_ARCHER);
+         }
+         if(this.countLivingBossSummonsByType(Unit.U_SPEARTON) < BOSS_SUMMON_SPEARTON_MAX)
          {
             availableSummons.push(Unit.U_SPEARTON);
          }
@@ -561,17 +573,25 @@ package com.brockw.stickwar.engine.units
             return;
          }
          summonType = int(availableSummons[int(game.random.nextInt() % availableSummons.length)]);
-         newUnit = game.unitFactory.getUnit(summonType);
-         this.team.spawn(newUnit,game);
-         newUnit.isBossSummoned = true;
-         newUnit.isTowerSpawned = true;
-         newUnit.x = newUnit.px = this.px - this.team.direction * (40 + this.countLivingBossSummons() * 25);
-         newUnit.y = newUnit.py = this.py + (this.countLivingBossSummons() - 1) * 35;
-         this.team.population += newUnit.population;
-         game.projectileManager.initTowerSpawn(newUnit.px,newUnit.py,this.team,0.6);
-         game.projectileManager.initSpawnDrip(newUnit.px,newUnit.py,this.team);
-         game.soundManager.playSound("TowerCapture",newUnit.px,newUnit.py);
-         this.bossSummonedUnits.push(newUnit);
+         summonCount = this.getBossSummonSpawnCountForType(summonType);
+         for(i = 0; i < summonCount; i++)
+         {
+            if(!this.canBossSummonType(summonType))
+            {
+               return;
+            }
+            newUnit = game.unitFactory.getUnit(summonType);
+            this.team.spawn(newUnit,game);
+            newUnit.isBossSummoned = true;
+            newUnit.isTowerSpawned = true;
+            newUnit.x = newUnit.px = this.px - this.team.direction * (40 + this.countLivingBossSummons() * 25);
+            newUnit.y = newUnit.py = this.py + (this.countLivingBossSummons() - 1) * 35;
+            this.team.population += newUnit.population;
+            game.projectileManager.initTowerSpawn(newUnit.px,newUnit.py,this.team,0.6);
+            game.projectileManager.initSpawnDrip(newUnit.px,newUnit.py,this.team);
+            game.soundManager.playSound("TowerCapture",newUnit.px,newUnit.py);
+            this.bossSummonedUnits.push(newUnit);
+         }
       }
 
       public function clearBossSummonsOnDeath() : void
@@ -612,6 +632,35 @@ package com.brockw.stickwar.engine.units
             }
          }
          return count;
+      }
+
+      private function canBossSummonAnyGuardType() : Boolean
+      {
+         return this.canBossSummonType(Unit.U_SPEARTON) || this.canBossSummonType(Unit.U_SWORDWRATH) || this.canBossSummonType(Unit.U_ARCHER);
+      }
+
+      private function canBossSummonType(type:int) : Boolean
+      {
+         switch(type)
+         {
+            case Unit.U_SPEARTON:
+               return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_SPEARTON_MAX;
+            case Unit.U_SWORDWRATH:
+               return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_SWORDWRATH_MAX;
+            case Unit.U_ARCHER:
+               return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_ARCHER_MAX;
+            default:
+               return false;
+         }
+      }
+
+      private function getBossSummonSpawnCountForType(type:int) : int
+      {
+         if(type == Unit.U_SPEARTON)
+         {
+            return 1;
+         }
+         return 2;
       }
 
       private function updateBossBodyguards(game:StickWar) : void
