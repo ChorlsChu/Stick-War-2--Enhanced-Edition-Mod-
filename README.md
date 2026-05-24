@@ -11,6 +11,19 @@ This summary compares the mod against:
 2. Drag `Stick_War_2_Upgrades.swf` into the Flash Player window.
 3. Wait for the game to load, then start playing.
 
+## Keybinds
+
+- `Z`: Scroll camera left
+- `C`: Scroll camera right
+- `F`: Toggle fast forward
+- `P` or `Esc`: Pause
+- `Space`: Select all non-miner units
+- Double-tap `Space`: Jump camera to your forward unit
+- `G`: Garrison/Ungarrison selected units
+- `U`: Ungarrison units that are full-health
+- `I`: Select all garrisoned units
+- `J`: Select poisoned units
+
 ## Requirements
 
 - A standalone Flash Player projector is required.
