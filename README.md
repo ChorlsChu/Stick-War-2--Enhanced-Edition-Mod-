@@ -24,6 +24,25 @@ This summary compares the mod against:
 - `I`: Select all garrisoned units
 - `J`: Select poisoned units
 
+## Unit Toggles
+
+- `Archidon Auto Kite`
+  - Select an `Archidon` and use its action toggle button to switch between:
+  - `Auto Kite`: retreats while reloading if enemies get too close
+  - `Manual Positioning`: holds its ground unless you move it
+  - `Archidon` starts with `Manual Positioning` by default
+- `Shadowrath Auto Cloak`
+  - Select a `Shadowrath` and use its action toggle button to switch between:
+  - `Auto Cloak`: automatically cloaks when enemies enter engage range
+  - `Manual Cloak`: only cloaks when commanded manually
+  - `Shadowrath` starts with `Manual Cloak` by default
+- `Magikill Autocast`
+  - Select a `Magikill` and use its action toggle button to cycle between:
+  - `Auto Cast`: autocasts all valid spells
+  - `Meteor Only`: only autocasts Meteor(For saving mana)
+  - `Disabled Autocast`: does not autocast spells
+  - `Magikill` starts with `Disabled Autocast` by default
+
 ## Requirements
 
 - A standalone Flash Player projector is required.
