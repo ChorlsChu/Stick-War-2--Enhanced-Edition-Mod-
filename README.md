@@ -125,9 +125,12 @@ This mod focuses on:
   - disguised miners reveal on damage instead of the older passive proximity model
 - `Fake miner slot logic`
   - disguised Shadowraths try alternate slot reassignment before revealing back
+- `Medusa Gates Level`
+  - Chaos Empire can now use Medusa Units
 - `Medusa final fight`
-  - summon controller reworked toward event-driven bookkeeping
-  - summon tracking and active-count handling improved
+  - She now summons more minions based on difficulty
+  - She has more health
+  - Faster melee attacks
 
 ## Boss Special Abilities
 
