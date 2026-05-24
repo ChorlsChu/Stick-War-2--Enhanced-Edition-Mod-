@@ -9,6 +9,7 @@ package com.brockw.stickwar.engine.Ai
    import com.brockw.stickwar.engine.units.Archer;
    import com.brockw.stickwar.engine.units.EnslavedGiant;
    import com.brockw.stickwar.engine.units.Magikill;
+   import com.brockw.stickwar.engine.units.Monk;
    import com.brockw.stickwar.engine.units.Ninja;
    import com.brockw.stickwar.engine.units.Unit;
    
@@ -535,4 +536,3 @@ package com.brockw.stickwar.engine.Ai
 
    }
 }
-
