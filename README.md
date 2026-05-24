@@ -5,6 +5,17 @@
 This summary compares the mod against:
 - `Stick War 2 OG Backup`
 
+## How to Play
+
+1. Open a standalone Flash Player projector.
+2. Drag `Stick_War_2_Upgrades.swf` into the Flash Player window.
+3. Wait for the game to load, then start playing.
+
+## Requirements
+
+- A standalone Flash Player projector is required.
+- Modern web browsers will not run the game.
+
 ## Overview
 
 This mod focuses on:
