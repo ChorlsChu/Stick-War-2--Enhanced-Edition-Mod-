@@ -121,8 +121,7 @@ This mod focuses on:
 - Fixed `Statue.damage()` crash caused by using an undefined `game` variable.
 - Fixed startup `IOErrorEvent` / `Load Never Completed` intro loader errors by handling failed external intro loads safely.
 - Fixed `MinerChaos` loadout bug:
-  - removed campaign-only forced `Bone Bag` override every update
-  - Chaos miner loadout now respects armory choice
+  - removed campaign-only forced `Bone Bag` override every update which causes FPS drops
 - Fixed `tutorial lag spike` caused by repeatedly issuing `enemyTeam.attack(true)` every update after the tutorial phase.
 - Fixed `Magikill autocast default` consistency so both normal and boss Magikill can start disabled.
 
