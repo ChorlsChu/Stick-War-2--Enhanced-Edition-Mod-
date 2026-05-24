@@ -75,6 +75,10 @@ This mod focuses on:
   - partial reveal
   - full reveal escalation
   - strategy pause/interrupt when the player gains advantage
+- Added a `custom Magikill autocast system`:
+  - multiple autocast modes
+  - weighted spell selection
+  - smarter spell-pick behavior than the OG enemy casting flow
 - Added `Shadowrath debug tools` during development:
   - full vision
   - enemy Shadowrath spawn
@@ -106,15 +110,11 @@ This mod focuses on:
 ## Boss and Gameplay Changes
 
 - `Shadowrath Boss`
-  - normal cloak path removed
-  - boss uses special cloak path only
-  - chain-cloak behavior retained
+  - boss uses special cloak behavior instead of the normal Shadowrath cloak path
   - retreat behavior simplified:
     - no Meric-heal retreat
-    - no emergency statue-defense comeback
     - retreat, garrison, and stay gone
 - `Magikill Boss`
-  - starts with autocast disabled by default
   - uses a simpler boss-only generic enemy casting path
   - boss summon remains separate from standard player autocast logic
   - boss stun remains the stun/lightning wall spell, not a separate generic lightning ability
@@ -128,6 +128,31 @@ This mod focuses on:
 - `Medusa final fight`
   - summon controller reworked toward event-driven bookkeeping
   - summon tracking and active-count handling improved
+
+## Boss Special Abilities
+
+- `Spearton Boss`
+  - uses `Shield Wall` and `Shield Bash`
+  - commands nearby `Speartons` to brace with him
+- `Archidon Boss`
+  - uses `Fire Arrows`
+  - commands nearby `Archers` to use `Fire Arrows`
+  - retreats to base and regroups if too few allied archers remain nearby
+  - instantly spawns `4` more archers during regroup
+  - has stronger/faster kiting behavior than normal `Archidons`
+- `Shadowrath Boss`
+  - uses a longer-lasting special cloak
+  - can immediately chain into cloak again after a successful cloaked hit
+  - prioritizes support targets and flanks them
+  - can lead nearby `Shadowraths` into coordinated flanks
+  - suffers a longer recovery if the special cloak attempt ends poorly
+- `Magikill Boss`
+  - lightning spell deals low damage but stuns enemies for a longer time
+  - can summon `Swordwraths`, `Speartons`, and `Archidons`
+  - summoned bodyguards stay close and return to protect the boss
+- `Meric Boss`
+  - can revive fallen allies
+  - revival priority favors stronger units first, especially `Speartons`, then `Shadowraths`, then `Magikills`
 
 ## Fixes
 

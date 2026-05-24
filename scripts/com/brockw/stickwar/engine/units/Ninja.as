@@ -30,6 +30,10 @@ package com.brockw.stickwar.engine.units
       private static const BOSS_ESCAPE_INVISIBLE_FRAMES:int = 30 * 2;
 
       private static const BOSS_WHIFF_PENALTY_FRAMES:int = 30 * 20;
+
+      private static const BOSS_SPECIAL_CLOAK_DURATION_FRAMES:int = 30 * 10;
+
+      private static const BOSS_CHAIN_CLOAK_DURATION_FRAMES:int = 30 * 5;
       
       private static var WEAPON_REACH:int;
       
@@ -219,7 +223,7 @@ package com.brockw.stickwar.engine.units
          return this._stealthSpellTimer.cooldown();
       }
       
-      private function activateStealth(isBossSpecial:Boolean, ignoreCooldown:Boolean = false) : Boolean
+      private function activateStealth(isBossSpecial:Boolean, ignoreCooldown:Boolean = false, bossEffectFrames:int = -1) : Boolean
       {
          if(this.isBoss && !isBossSpecial)
          {
@@ -229,9 +233,16 @@ package com.brockw.stickwar.engine.units
          {
             if(ignoreCooldown)
             {
-               this._stealthSpellTimer.forceActivate();
+               if(bossEffectFrames >= 0)
+               {
+                  this._stealthSpellTimer.forceActivateWithEffect(bossEffectFrames);
+               }
+               else
+               {
+                  this._stealthSpellTimer.forceActivate();
+               }
             }
-            else if(!this._stealthSpellTimer.spellActivate(team))
+            else if(bossEffectFrames >= 0 ? !this._stealthSpellTimer.spellActivateWithEffect(team,bossEffectFrames) : !this._stealthSpellTimer.spellActivate(team))
             {
                return false;
             }
@@ -252,9 +263,9 @@ package com.brockw.stickwar.engine.units
          return this.activateStealth(false);
       }
 
-      public function bossSpecialStealth(ignoreCooldown:Boolean = false) : Boolean
+      public function bossSpecialStealth(ignoreCooldown:Boolean = false, isChainCloak:Boolean = false) : Boolean
       {
-         return this.activateStealth(true,ignoreCooldown);
+         return this.activateStealth(true,ignoreCooldown,isChainCloak ? BOSS_CHAIN_CLOAK_DURATION_FRAMES : BOSS_SPECIAL_CLOAK_DURATION_FRAMES);
       }
       
       override protected function checkForHit() : Boolean
@@ -614,7 +625,7 @@ package com.brockw.stickwar.engine.units
             return false;
          }
          this.bossPendingChainCloak = false;
-         return this.bossSpecialStealth(true);
+         return this.bossSpecialStealth(true,true);
       }
 
       public function isBossSpecialTargetingActive() : Boolean

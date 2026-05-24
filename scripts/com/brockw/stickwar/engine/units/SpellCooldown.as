@@ -10,6 +10,8 @@ package com.brockw.stickwar.engine.units
       private var cooldownTime:int = 0;
       
       private var effect:int = 0;
+
+      private var activeEffectOverride:int = -1;
       
       private var mana:int = 0;
       
@@ -28,6 +30,19 @@ package com.brockw.stickwar.engine.units
          {
             team.mana -= this.mana;
             this.counter = 0;
+            this.activeEffectOverride = -1;
+            return true;
+         }
+         return false;
+      }
+
+      public function spellActivateWithEffect(team:Team, effectFrames:int) : Boolean
+      {
+         if(this.counter >= this.cooldownTime && this.mana <= team.mana)
+         {
+            team.mana -= this.mana;
+            this.counter = 0;
+            this.activeEffectOverride = effectFrames;
             return true;
          }
          return false;
@@ -36,11 +51,22 @@ package com.brockw.stickwar.engine.units
       public function forceActivate() : void
       {
          this.counter = 0;
+         this.activeEffectOverride = -1;
+      }
+
+      public function forceActivateWithEffect(effectFrames:int) : void
+      {
+         this.counter = 0;
+         this.activeEffectOverride = effectFrames;
       }
       
       public function update() : void
       {
          ++this.counter;
+         if(this.activeEffectOverride >= 0 && this.counter >= this.activeEffectOverride)
+         {
+            this.activeEffectOverride = -1;
+         }
       }
       
       public function timeRunning() : Number
@@ -50,7 +76,7 @@ package com.brockw.stickwar.engine.units
       
       public function inEffect() : Boolean
       {
-         return this.counter < this.effect;
+         return this.counter < this.currentEffectFrames();
       }
       
       public function cooldown() : Number
@@ -61,6 +87,15 @@ package com.brockw.stickwar.engine.units
             t = 0;
          }
          return t;
+      }
+
+      private function currentEffectFrames() : int
+      {
+         if(this.activeEffectOverride >= 0)
+         {
+            return this.activeEffectOverride;
+         }
+         return this.effect;
       }
    }
 }
