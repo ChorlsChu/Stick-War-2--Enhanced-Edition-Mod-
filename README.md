@@ -131,6 +131,9 @@ This mod focuses on:
   - She now summons more minions based on difficulty
   - She has more health
   - Faster melee attacks
+- `Enemy Order Levels`
+  - They now reward you 2 upgrade points instead of one for fighting bosses on each level
+  - Rebels United(Westwind) level rewards you 3 upgrade points for fighting all bosses together
 
 ## Boss Special Abilities
 
