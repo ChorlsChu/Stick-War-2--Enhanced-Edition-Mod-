@@ -335,7 +335,7 @@ package com.brockw.stickwar.campaign
          main.postGameScreen.setRecords(game.economyRecords,game.militaryRecords);
          if(e.winner == team.id)
          {
-            main.campaign.campaignPoints += main.campaign.getCurrentLevel().points;
+            main.campaign.campaignPoints += this.getCampaignPointReward(main.campaign.getCurrentLevel());
             ++main.campaign.currentLevel;
          }
          if(!main.campaign.isGameFinished() && e.winner == team.id)
@@ -399,6 +399,23 @@ package com.brockw.stickwar.campaign
       public function get campaignController() : CampaignController
       {
          return this.controller;
+      }
+
+      private function getCampaignPointReward(level:Level) : int
+      {
+         if(level == null)
+         {
+            return 0;
+         }
+         if(level.title == "Rebels United")
+         {
+            return level.points * 3;
+         }
+         if(Team.getIdFromRaceName(level.oponent.race) == Team.T_GOOD)
+         {
+            return level.points * 2;
+         }
+         return level.points;
       }
 
       private function initializeLevelPrewarm(level:Level) : void
