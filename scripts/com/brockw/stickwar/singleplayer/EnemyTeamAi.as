@@ -11,6 +11,7 @@ package com.brockw.stickwar.singleplayer
    
    public class EnemyTeamAi
    {
+      private static const STATS_REFRESH_INTERVAL_FRAMES:int = 6;
       
       protected var isAttacking:Boolean;
       
@@ -50,8 +51,7 @@ package com.brockw.stickwar.singleplayer
       
       public function update(game:StickWar) : void
       {
-         this.team.calculateStatistics();
-         this.team.enemyTeam.calculateStatistics();
+         this.updateTeamStatistics(game);
          this.updateMiners(game);
          this.rebalanceMiners(game);
          this.updateStrategyDirtyState(game);
@@ -421,6 +421,17 @@ package com.brockw.stickwar.singleplayer
             return 1;
          }
          return 2;
+      }
+
+      private function updateTeamStatistics(game:StickWar) : void
+      {
+         var ownArmyChangeVersion:int = this.team.armyChangeVersion;
+         var enemyArmyChangeVersion:int = this.team.enemyTeam.armyChangeVersion;
+         if(ownArmyChangeVersion != this.lastOwnArmyChangeVersion || enemyArmyChangeVersion != this.lastEnemyArmyChangeVersion || game.frame % STATS_REFRESH_INTERVAL_FRAMES == 0)
+         {
+            this.team.calculateStatistics();
+            this.team.enemyTeam.calculateStatistics();
+         }
       }
    }
 }
