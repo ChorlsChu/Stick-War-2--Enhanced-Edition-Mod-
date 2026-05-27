@@ -240,4 +240,4 @@ This mod focuses on:
 - `scripts/com/brockw/stickwar/engine/units/Statue.as`
 
 
-Note: Yes I only have 7 commits and yes I keep forgotting to commmit them :P
+Note: Yes I only have few commits and yes I keep forgotting to commmit them :P
