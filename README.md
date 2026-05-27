@@ -2,9 +2,6 @@
 
 `Stick War 2: Enhanced Edition(Mod)` is a campaign overhaul built on top of the original game, with expanded boss encounters, new campaign mechanics, AI changes, balance tweaks, bug fixes, and performance work.
 
-This summary compares the mod against:
-- `Stick War 2 OG Backup`
-
 ## How to Play
 
 1. Open a standalone Flash Player projector.
@@ -23,6 +20,14 @@ This summary compares the mod against:
 - `U`: Ungarrison units that are full-health
 - `I`: Select all garrisoned units
 - `J`: Select poisoned units
+
+## Overview
+
+This mod focuses on:
+- expanding the campaign with faction bosses and reinforcements
+- adding more distinctive level mechanics, especially for Shadowrath and Medusa encounters
+- improving campaign pacing and spectacle
+- fixing long-standing bugs and reducing avoidable lag spikes
 
 ## Unit Toggles
 
@@ -47,14 +52,6 @@ This summary compares the mod against:
 
 - A standalone Flash Player projector is required.
 - Modern web browsers will not run the game.
-
-## Overview
-
-This mod focuses on:
-- expanding the campaign with faction bosses and reinforcements
-- adding more distinctive level mechanics, especially for Shadowrath and Medusa encounters
-- improving campaign pacing and spectacle
-- fixing long-standing bugs and reducing avoidable lag spikes
 
 ## Features Added
 
