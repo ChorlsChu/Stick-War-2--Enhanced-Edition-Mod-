@@ -1,6 +1,7 @@
 package com.brockw.stickwar.engine.projectile
 {
    import com.brockw.stickwar.engine.*;
+   import com.brockw.stickwar.engine.units.Skelator;
    import com.brockw.stickwar.engine.units.Unit;
    import flash.display.*;
    
@@ -42,6 +43,10 @@ package com.brockw.stickwar.engine.projectile
          if(this.team != unit.team)
          {
             unit.damage(0,damageToDeal,null);
+            if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+            {
+               unit.poison(unit.team.game.xml.xml.Chaos.Units.medusa.poison.poison);
+            }
          }
       }
       
@@ -61,6 +66,10 @@ package com.brockw.stickwar.engine.projectile
          this.scaleY = 1 * (game.backScale + py / game.map.height * (game.frontScale - game.backScale));
          if(this.spellMc.currentFrame == 10)
          {
+            if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+            {
+               game.projectileManager.initPoisonFistEffect(this.px,this.py,this.inflictor,this.fistRange);
+            }
             game.spatialHash.mapInArea(this.px - this.fistRange,this.py - this.fistRange,this.px + this.fistRange,this.py + this.fistRange,this.damageUnit);
          }
       }

@@ -48,7 +48,7 @@ package com.brockw.stickwar.engine.projectile
       public static const SPAWN_DRIP:int = 18;
       
       public static const HEAL_EFFECT:int = 19;
-      
+
       protected var _scale:Number;
       
       protected var _dx:Number;
@@ -92,7 +92,7 @@ package com.brockw.stickwar.engine.projectile
       protected var lastDistanceToCentre:int;
       
       public var isFire:Boolean;
-      
+
       private var _area:Number;
       
       private var _areaDamage:Number;

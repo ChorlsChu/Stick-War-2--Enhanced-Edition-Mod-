@@ -1,243 +1,204 @@
-# Stick War 2: Enhanced Edition(Mod)
+# Stick War 2: Enhanced Edition Mod
 
-`Stick War 2: Enhanced Edition(Mod)` is a campaign overhaul built on top of the original game, with expanded boss encounters, new campaign mechanics, AI changes, balance tweaks, bug fixes, and performance work.
+`Stick War 2: Enhanced Edition Mod` is a campaign-focused overhaul of `Stick War 2` that expands boss fights, improves enemy behavior, adds new level events, rebalances campaign progression, and fixes several bugs/performance issues from the original game.
+
+This mod is built for players who want the original campaign to feel more dramatic, more reactive, and more boss-heavy while still keeping the classic Stick War 2 feel.
+
+![Thumbnail](thumbnail.jpg)
 
 ## How to Play
 
-1. Open a standalone Flash Player projector.
+1. Open `flashplayer_32_sa.exe`, or any standalone Flash Player projector.
 2. Drag `Stick_War_2_Upgrades.swf` into the Flash Player window.
-3. Wait for the game to load, then start playing.
+3. Start a campaign and play normally.
 
-## Keybinds
+Modern browsers usually cannot run Flash content directly, so the standalone projector is recommended.
 
-- `Z`: Scroll camera left
-- `C`: Scroll camera right
-- `F`: Toggle fast forward
-- `P` or `Esc`: Pause
-- `Space`: Select all non-miner units
-- Double-tap `Space`: Jump camera to your forward unit
-- `G`: Garrison/Ungarrison selected units
-- `U`: Ungarrison units that are full-health
-- `I`: Select all garrisoned units
-- `J`: Select poisoned units
+## Main Features
 
-## Overview
+- Expanded campaign boss encounters for both Order and Chaos factions.
+- New Chaos boss reinforcements in their own levels and in `Medusa's Gates`.
+- Smarter campaign enemy AI with better army advantage checks and less awkward cautious attacks.
+- Campaign reinforcements with temporary statue protection to prevent instant wave deletion.
+- New boss abilities, passives, cosmetics, and phase behavior.
+- Player-side quality-of-life toggles for Archidons, Shadowraths, and Magikill.
+- Reworked Medusa final boss encounter with stronger phases and summons.
+- Bug fixes for crashes, spell edge cases, health bars, unit control, and campaign screens.
+- Performance cleanup for debug overlays, campaign map updates, AI scans, and repeated logic.
 
-This mod focuses on:
-- expanding the campaign with faction bosses and reinforcements
-- adding more distinctive level mechanics, especially for Shadowrath and Medusa encounters
-- improving campaign pacing and spectacle
-- fixing long-standing bugs and reducing avoidable lag spikes
+## Boss Roster
+
+### Order Bosses
+
+- `Spearton Boss`
+  - Uses `Shield Wall` and `Shield Bash`.
+  - Commands nearby Speartons to brace with him.
+- `Archidon Boss`
+  - Uses Fire Arrows.
+  - Commands nearby Archidons to use Fire Arrows.
+  - Can retreat and regroup with extra archers.
+- `Shadowrath Boss`
+  - Uses special boss cloak behavior.
+  - Can chain cloak after successful attacks.
+  - Leads nearby Shadowraths into flanks.
+- `Magikill Boss`
+  - Uses stun-focused lightning.
+  - Summons Swordwraths, Speartons, and Archidons.
+  - Protects the enemy statue with a temporary ward.
+- `Meric Boss`
+  - Can revive fallen allies.
+  - Prioritizes stronger units when reviving.
+
+### Chaos Bosses
+
+- `Knight Boss`
+  - Uses boss-style charge pressure and enhanced durability.
+  - Appears in Chaos boss reinforcements where relevant.
+- `Wingidon Boss`
+  - Uses `Eclipse Mark`, `Demon Burst Fire`, and `Sky Commander Aura`.
+  - Can direct nearby Wingidons toward marked targets.
+  - Has anti-arrow pressure behavior to avoid instant archer deletion.
+- `Skelator / Marrowkai Boss`
+  - Uses `Dead Rising`, `Poison Fists`, and `Reaper Control`.
+  - Summons limited Deads during low-health distancing phase.
+  - Reaper-controlled units can temporarily attack their own allies.
+  - Has poison immunity and poison deathburst behavior.
+- `Medusa Boss`
+  - Final boss version has stronger health, attacks, summons, and phase pressure.
+  - `Look At Me` warns the player when units are turned to stone.
+
+## Boss Abilities
+
+### Wingidon Boss
+
+- `Eclipse Mark`
+  - Fires a special marking arrow.
+  - Marked units take bonus damage from the next Wingidon/Eclipsor projectile.
+  - Nearby Wingidons can be encouraged to focus the marked target.
+- `Demon Burst Fire`
+  - Fires a short burst of arrows.
+  - Hit units are stunned briefly.
+- `Sky Commander Aura`
+  - Temporarily empowers nearby enemy Wingidons.
+  - Boss glows while the aura is active.
+
+### Skelator / Marrowkai Boss
+
+- `Dead Rising`
+  - Available below 50% health.
+  - Summons Deads beside the boss.
+  - Max active summon cap keeps the spell from flooding the map.
+- `Poison Fists`
+  - Skeletal fists poison units they hit.
+  - Poison fist visuals are attached to the fist impact.
+- `Reaper Control`
+  - Temporarily controls a struck enemy unit.
+  - Controlled units cannot be selected by the player.
+  - Controlled Magikill can cast spells against its own allies.
+
+## Campaign Changes
+
+- Bosses appear in their own campaign levels.
+- Chaos bosses also appear through reinforcements in `Medusa's Gates`.
+- Several boss levels reward extra campaign points.
+- `Rebels United` is built as a major multi-boss rebel encounter.
+- `Medusa's Gates` now includes heavier Chaos Empire pressure.
+- The final Medusa battle has improved pacing, music transitions, summons, and boss mechanics.
 
 ## Unit Toggles
 
 - `Archidon Auto Kite`
-  - Select an `Archidon` and use its action toggle button to switch between:
-  - `Auto Kite`: retreats while reloading if enemies get too close
-  - `Manual Positioning`: holds its ground unless you move it
-  - `Archidon` starts with `Manual Positioning` by default
+  - Toggle between `Auto Kite` and `Manual Positioning`.
+  - Archidons start in `Manual Positioning`.
 - `Shadowrath Auto Cloak`
-  - Select a `Shadowrath` and use its action toggle button to switch between:
-  - `Auto Cloak`: automatically cloaks when enemies enter engage range
-  - `Manual Cloak`: only cloaks when commanded manually
-  - `Shadowrath` starts with `Manual Cloak` by default
+  - Toggle between `Auto Cloak` and `Manual Cloak`.
+  - Shadowraths start in `Manual Cloak`.
 - `Magikill Autocast`
-  - Select a `Magikill` and use its action toggle button to cycle between:
-  - `Auto Cast`: autocasts all valid spells
-  - `Meteor Only`: only autocasts Meteor(For saving mana)
-  - `Disabled Autocast`: does not autocast spells
-  - `Magikill` starts with `Disabled Autocast` by default
+  - Cycle between `Auto Cast`, `Meteor Only`, and `Disabled Autocast`.
+  - Magikill starts with autocast disabled.
+
+## Controls
+
+- `Z` - Scroll camera left
+- `C` - Scroll camera right
+- `F` - Toggle fast forward
+- `P` or `Esc` - Pause
+- `Space` - Select all non-miner units
+- Double-tap `Space` - Jump camera to your forward unit
+- `G` - Garrison or ungarrison selected units
+- `U` - Ungarrison full-health units
+- `I` - Select all garrisoned units
+- `J` - Select poisoned units
+
+## AI Improvements
+
+- Enemy campaign strategy now reacts better to army advantage and disadvantage.
+- Hidden Shadowrath forces are counted more intelligently.
+- Shadowrath disguise/trap behavior is more coordinated.
+- Boss support units stay more relevant around their boss.
+- Enemy reinforcements are less likely to be instantly deleted on spawn.
+- Expensive AI scans were reduced or cached where possible.
+
+## Bug Fixes and Polish
+
+- Fixed multiple boss health bar issues caused by damage-reduction-only stat changes.
+- Fixed debug spawning crashes when spawning units from the wrong empire.
+- Fixed Reaper Control cleanup so units return to normal after control ends.
+- Fixed Reaper-controlled units hitting flying units when they should not.
+- Fixed Magikill friendly-fire spell behavior while Reaper-controlled.
+- Fixed Poison Fists behavior so the fist hit applies poison while the effect stays visual.
+- Fixed campaign map and intro debug overlays showing on-screen.
+- Fixed several lag spikes from repeated debug/stat display updates.
+- Fixed campaign map update logic and prewarm behavior.
+- Fixed several Shadowrath disguise edge cases.
+- Fixed startup intro loading errors by handling failed intro loads safely.
+
+## Performance Notes
+
+This mod includes a lot of new boss logic, but several heavy debug and repeated-update systems were removed or reduced before release:
+
+- Removed large per-frame debug stat overlay updates.
+- Removed map coordinate debug display.
+- Removed intro frame/debug display.
+- Reduced repeated AI target scans through caching.
+- Reduced repeated campaign map UI updates.
+- Reduced repeated tutorial/enemy command spam.
+
+Normal debug keybind checks are lightweight and only run deeper checks while `Shift` is held.
+
+## Music Notes
+
+Campaign levels use a mix of:
+
+- `battleOfTheShadowElves`
+- `enteringTheStronghold`
+- `chaosInGame`
+- `fieldOfMemories`
+
+The final Medusa level starts with `battleOfTheShadowElves` and later switches to `fieldOfMemories` during the true boss fight.
 
 ## Requirements
 
-- A standalone Flash Player projector is required.
-- Modern web browsers will not run the game.
+- Windows is recommended.
+- Standalone Flash Player projector is required.
+- Included projector: `flashplayer_32_sa.exe`
+- Game file: `Stick_War_2_Upgrades.swf`
 
-## Features Added
+## Notes for Players
 
-- Added a `Westwind/Rebel boss` style campaign boss system for major campaign encounters.
-- Added `faction boss promotion` for campaign levels:
-  - `Spearton Boss`
-  - `Archidon Boss`
-  - `Shadowrath Boss`
-  - `Magikill Boss`
-  - `Monk Boss`
-- Added a `Shadowrath disguise system` on `Silent Assassins: Ninjas Declare War`:
-  - enemy Shadowraths can disguise as fake miners
-  - fake miners can use mining and prayer slots
-  - disguised Shadowraths count as hidden military for AI decisions
-- Added `Shadowrath trap AI`:
-  - hidden-force counting
-  - bait/lure behavior
-  - partial reveal
-  - full reveal escalation
-  - strategy pause/interrupt when the player gains advantage
-- Added a `custom Magikill autocast system`:
-  - multiple autocast modes
-  - weighted spell selection
-  - smarter spell-pick behavior than the OG enemy casting flow
-- Added `Shadowrath debug tools` during development:
-  - full vision
-  - enemy Shadowrath spawn
-  - force disguise
-  - allied Spearton + Archidon spawn
-  - these debug keybinds were later removed from the public gameplay path
-- Expanded `campaign reinforcements`:
-  - no longer Insane-only
-  - bosses always appear on relevant boss levels
-  - escort and reinforcement composition scales by difficulty
-- Added `reinforcement statue protection`:
-  - temporary damage immunity when reinforcements trigger
-  - duration scales by difficulty
-- Expanded `Magikill Boss summon system`:
-  - summon pool includes:
-    - `Spearton`
-    - `Swordwrath`
-    - `Archidon`
-  - per-type caps:
-    - `3 Speartons`
-    - `2 Swordwraths`
-    - `2 Archidons`
-- Added custom `Medusa boss cosmetics`:
-  - `Snake Cape`
-  - `Jewel Crown`
-- Added `level-specific gameplay prewarm` for rare unit classes.
-- Added `campaign map prewarm` for map frames and the banner/flag turning animation.
+- This is a campaign overhaul, not a full new game.
+- Some encounters are intentionally harder than the original campaign.
+- Boss fights are designed around pressure, reinforcements, and phase behavior.
+- If something feels unusually broken, save your file and report the level, difficulty, and what happened.
 
-## Boss and Gameplay Changes
+## Credits
 
-- `Shadowrath Boss`
-  - boss uses special cloak behavior instead of the normal Shadowrath cloak path
-  - retreat behavior simplified:
-    - no Meric-heal retreat
-    - retreat, garrison, and stay gone
-- `Magikill Boss`
-  - uses a simpler boss-only generic enemy casting path
-  - boss summon remains separate from standard player autocast logic
-  - boss stun remains the stun/lightning wall spell, not a separate generic lightning ability
-- `Shadowrath level`
-  - enemy Swordwrath cap increased to `6`
-  - disguise defense radius widened
-  - spawn and return-to-defend disguise lock added
-  - disguised miners reveal on damage instead of the older passive proximity model
-- `Fake miner slot logic`
-  - disguised Shadowraths try alternate slot reassignment before revealing back
-- `Medusa Gates Level`
-  - Chaos Empire can now use Medusa Units
-- `Medusa final fight`
-  - She now summons more minions based on difficulty
-  - She has more health
-  - Faster melee attacks
-- `Enemy Order Levels`
-  - They now reward you 2 upgrade points instead of one for fighting bosses on each level
-  - Rebels United(Westwind) level rewards you 3 upgrade points for fighting all bosses together
+- Original `Stick War 2` by its original creators.
+- Enhanced Edition Mod by ChorlsChu / Charles.
+- Modding, scripting, balance changes, boss design, bug fixing, and testing were built on top of the original Flash/AS3 project.
 
-## Boss Special Abilities
+## Disclaimer
 
-- `Spearton Boss`
-  - uses `Shield Wall` and `Shield Bash`
-  - commands nearby `Speartons` to brace with him
-- `Archidon Boss`
-  - uses `Fire Arrows`
-  - commands nearby `Archers` to use `Fire Arrows`
-  - retreats to base and regroups if too few allied archers remain nearby
-  - instantly spawns `4` more archers during regroup
-  - has stronger/faster kiting behavior than normal `Archidons`
-- `Shadowrath Boss`
-  - uses a longer-lasting special cloak
-  - can immediately chain into cloak again after a successful cloaked hit
-  - prioritizes support targets and flanks them
-  - can lead nearby `Shadowraths` into coordinated flanks
-  - suffers a longer recovery if the special cloak attempt ends poorly
-- `Magikill Boss`
-  - lightning spell deals low damage but stuns enemies for a longer time
-  - can summon `Swordwraths`, `Speartons`, and `Archidons`
-  - summoned bodyguards stay close and return to protect the boss
-- `Meric Boss`
-  - can revive fallen allies
-  - revival priority favors stronger units first, especially `Speartons`, then `Shadowraths`, then `Magikills`
+This is a fan-made mod project. It is not an official Stick War release.
 
-## Fixes
-
-- Fixed `Shadowrath disguise` edge cases:
-  - no more instant reveal just because a fake slot changed
-  - no more instant disguise right on spawn after dedicated lock was added
-  - travel-to-slot no longer causes premature reveal
-- Fixed `campaign map banner/floor effect` after map prewarm:
-  - restored the spinning base effect under the banner
-- Fixed `Statue.damage()` crash caused by using an undefined `game` variable.
-- Fixed startup `IOErrorEvent` / `Load Never Completed` intro loader errors by handling failed external intro loads safely.
-- Fixed `MinerChaos` loadout bug:
-  - removed campaign-only forced `Bone Bag` override every update which causes FPS drops
-- Fixed `tutorial lag spike` caused by repeatedly issuing `enemyTeam.attack(true)` every update after the tutorial phase.
-- Fixed `Magikill autocast default` consistency so both normal and boss Magikill can start disabled.
-
-## Performance Optimizations
-
-- Optimized `campaign map screen`:
-  - cached title/story text updates
-  - cached map frame updates
-  - cached autosave visibility updates
-  - removed repeated per-frame flag mouse setup
-  - prewarmed nearby map frames and turning banner animation
-- Added `campaign gameplay prewarm`:
-  - immediate prewarm for starting rare units
-  - delayed queue for later unit classes
-- Optimized `EnemyTeamAi`:
-  - changed major strategy refresh from constant re-pick to army-change/aggression dirtying
-- Optimized `Team`:
-  - added army-change version tracking for event-style AI refresh
-- Optimized `UnitAi`:
-  - added same-frame cache for `getClosestSpellableTarget()`
-  - `getClosestTarget()` cache also used similarly
-- Optimized `NinjaAi`:
-  - reduced expensive boss helper scans
-  - simplified Shadowrath squad follow/flank behavior
-  - removed Meric-retreat scan
-  - removed emergency statue-defense comeback logic
-- Optimized `ArcherAi`:
-  - reduced repeated same-frame target fetch in boss rear-line logic
-- Optimized `MagikillAi`:
-  - added same-frame caches for spell target selection
-  - split boss casting away from player-style autocast logic
-- Optimized `MonkAi` and `SpeartonAi` with low-risk cleanup and reduced repeated work.
-- Optimized `CampaignCutScene2`:
-  - Medusa summon tracking moved toward cached/event-driven flow
-  - cleanup reduced to safety-pass role instead of main bookkeeping path
-
-## AI and Strategy Differences From OG
-
-- Campaign enemy AI is more customized than the original game:
-  - faction bosses
-  - hidden Shadowrath military accounting
-  - Shadowrath trap, lure, and full-push progression
-  - reinforcement statue shield
-  - boss-specific research grants
-- Boss-required research is granted automatically in campaign setup for relevant boss levels:
-  - `BLOCK`
-  - `SHIELD_BASH`
-  - `ARCHIDON_FIRE`
-  - `CLOAK`
-  - `CLOAK_II`
-  - `MAGIKILL_WALL`
-  - `MAGIKILL_POISON`
-  - `MONK_CURE`
-
-## Major Files Changed
-
-- `scripts/com/brockw/stickwar/campaign/CampaignGameScreen.as`
-- `scripts/com/brockw/stickwar/campaign/CampaignScreen.as`
-- `scripts/com/brockw/stickwar/campaign/controllers/CampaignTutorial.as`
-- `scripts/com/brockw/stickwar/campaign/controllers/CampaignCutScene2.as`
-- `scripts/com/brockw/stickwar/singleplayer/EnemyTeamAi.as`
-- `scripts/com/brockw/stickwar/singleplayer/EnemyGoodTeamAi.as`
-- `scripts/com/brockw/stickwar/singleplayer/EnemyChaosTeamAi.as`
-- `scripts/com/brockw/stickwar/engine/Ai/UnitAi.as`
-- `scripts/com/brockw/stickwar/engine/Ai/NinjaAi.as`
-- `scripts/com/brockw/stickwar/engine/Ai/MagikillAi.as`
-- `scripts/com/brockw/stickwar/engine/units/Magikill.as`
-- `scripts/com/brockw/stickwar/engine/units/MinerChaos.as`
-- `scripts/com/brockw/stickwar/engine/units/Statue.as`
-
-
-Note: Yes I only have few commits and yes I keep forgotting to commmit them :P
+And yes, commits were absolutely forgotten along the way. The code survived anyway. Somehow.

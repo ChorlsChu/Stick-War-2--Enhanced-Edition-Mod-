@@ -2,6 +2,10 @@ package com.brockw.stickwar.campaign.controllers
 {
    import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.campaign.InGameMessage;
+   import com.brockw.stickwar.engine.Ai.command.UnitCommand;
+   import com.brockw.stickwar.engine.Team.Team;
+   import com.brockw.stickwar.engine.multiplayer.moves.UnitMove;
+   import com.brockw.stickwar.engine.units.Unit;
    
    public class CampaignKnight extends CampaignController
    {
@@ -9,14 +13,18 @@ package com.brockw.stickwar.campaign.controllers
       private var message:InGameMessage;
       
       private var frames:int;
-      
+
+      private var openingRushIssued:Boolean;
+
       public function CampaignKnight(gameScreen:GameScreen)
       {
          super(gameScreen);
+         this.openingRushIssued = false;
       }
       
       override public function update(gameScreen:GameScreen) : void
       {
+         this.tryOpeningRush(gameScreen);
          if(Boolean(this.message) && gameScreen.contains(this.message))
          {
             this.message.update();
@@ -39,6 +47,38 @@ package com.brockw.stickwar.campaign.controllers
                this.frames = 0;
             }
          }
+      }
+
+      private function tryOpeningRush(gameScreen:GameScreen) : void
+      {
+         var unitId:String = null;
+         var unit:Unit = null;
+         var rushMove:UnitMove = null;
+         var enemyTeam:Team = null;
+         if(this.openingRushIssued || gameScreen == null || gameScreen.team == null || gameScreen.team.enemyTeam == null)
+         {
+            return;
+         }
+         enemyTeam = gameScreen.team.enemyTeam;
+         rushMove = new UnitMove();
+         rushMove.moveType = UnitCommand.ATTACK_MOVE;
+         rushMove.owner = enemyTeam.id;
+         rushMove.arg0 = gameScreen.team.statue.px;
+         rushMove.arg1 = gameScreen.game.map.height / 2;
+         for(unitId in enemyTeam.units)
+         {
+            unit = enemyTeam.units[unitId];
+            if(unit != null && unit.isAlive() && (unit.type == Unit.U_BOMBER || unit.type == Unit.U_KNIGHT))
+            {
+               rushMove.units.push(unit.id);
+            }
+         }
+         if(rushMove.units.length > 0)
+         {
+            enemyTeam.currentAttackState = Team.G_ATTACK;
+            rushMove.execute(gameScreen.game);
+         }
+         this.openingRushIssued = true;
       }
    }
 }

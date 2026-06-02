@@ -12,6 +12,14 @@ package com.brockw.stickwar.singleplayer
    public class EnemyTeamAi
    {
       private static const STATS_REFRESH_INTERVAL_FRAMES:int = 6;
+
+      private static const NO_ARMY_PRESSURE_MIN_POP:int = 3;
+
+      private static const CLEAR_ADVANTAGE_POP:int = 4;
+
+      private static const HUGE_ADVANTAGE_POP:int = 8;
+
+      private static const DEEP_PRESSURE_OFFSET:Number = 700;
       
       protected var isAttacking:Boolean;
       
@@ -190,6 +198,7 @@ package com.brockw.stickwar.singleplayer
          var u:Unit = null;
          var m:UnitMove = null;
          this.isAttacking = true;
+         this.team.currentAttackState = Team.G_ATTACK;
          var attackMoveUnits:* = new UnitMove();
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          var moveUnits:* = new UnitMove();
@@ -257,6 +266,7 @@ package com.brockw.stickwar.singleplayer
          var u:Unit = null;
          var m:UnitMove = null;
          this.isAttacking = false;
+         this.team.currentAttackState = Team.G_DEFEND;
          var attackMoveUnits:* = new UnitMove();
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          var moveUnits:* = new UnitMove();
@@ -303,7 +313,7 @@ package com.brockw.stickwar.singleplayer
          }
          else if(this.enemyIsWeak())
          {
-            this.attackMoveGroupTo(this.team.medianPosition + this.team.direction * 250);
+            this.attackMoveGroupTo(this.getPressureAttackTarget(this.team.medianPosition + this.team.direction * 250));
          }
          else if(this.enemyIsEvenStrength() || Unit.U_GIANT in this.team.unitGroups)
          {
@@ -345,6 +355,36 @@ package com.brockw.stickwar.singleplayer
       {
          var addOnTheArchers:int = this.team.enemyTeam.castleDefence.units.length * 4 + this.team.enemyTeam.attackingForcePopulation;
          return addOnTheArchers < this.team.attackingForcePopulation;
+      }
+
+      public function setUnitCreationEnabled(value:Boolean) : void
+      {
+         this.isCreatingUnits = value;
+      }
+
+      protected function getPressureAttackTarget(defaultTarget:Number) : Number
+      {
+         var playerArmy:int = this.team.enemyTeam.attackingForcePopulation;
+         var ownArmy:int = this.team.attackingForcePopulation;
+         var advantage:int = ownArmy - playerArmy;
+         var target:Number = defaultTarget;
+         if(playerArmy == 0 && ownArmy >= NO_ARMY_PRESSURE_MIN_POP)
+         {
+            return this.team.enemyTeam.statue.px;
+         }
+         if(advantage >= HUGE_ADVANTAGE_POP)
+         {
+            return this.team.enemyTeam.statue.px;
+         }
+         if(advantage >= CLEAR_ADVANTAGE_POP)
+         {
+            target = this.team.enemyTeam.homeX - this.team.direction * DEEP_PRESSURE_OFFSET;
+            if(this.team.direction * target > this.team.direction * defaultTarget)
+            {
+               return target;
+            }
+         }
+         return defaultTarget;
       }
       
       protected function enemyIsEvenStrength() : Boolean

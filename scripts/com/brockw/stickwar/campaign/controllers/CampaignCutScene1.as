@@ -56,6 +56,8 @@ package com.brockw.stickwar.campaign.controllers
       
       private var rebels:Array;
       
+      private var openingGiantAttackIssued:Boolean;
+      
       public function CampaignCutScene1(gameScreen:GameScreen)
       {
          super(gameScreen);
@@ -66,6 +68,7 @@ package com.brockw.stickwar.campaign.controllers
          this.overlay.graphics.drawRect(0,0,850,750);
          this.rebels = [];
          this.rebelsAreEvil = true;
+         this.openingGiantAttackIssued = false;
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -133,6 +136,14 @@ package com.brockw.stickwar.campaign.controllers
                if(giant == null || giant.health == 0)
                {
                   numGiants = 0;
+               }
+               else
+               {
+                  if(!this.openingGiantAttackIssued)
+                  {
+                     this.orderOpeningGiantAttackMove(gameScreen,giant);
+                     this.openingGiantAttackIssued = true;
+                  }
                }
             }
             if(numGiants == 0)
@@ -372,6 +383,25 @@ package com.brockw.stickwar.campaign.controllers
             }
          }
          super.update(gameScreen);
+      }
+
+      private function orderOpeningGiantAttackMove(gameScreen:GameScreen, giant:Giant) : void
+      {
+         var attackMove:AttackMoveCommand = null;
+         if(gameScreen == null || gameScreen.game == null || gameScreen.team == null || giant == null || giant.ai == null)
+         {
+            return;
+         }
+         attackMove = new AttackMoveCommand(gameScreen.game);
+         attackMove.type = UnitCommand.ATTACK_MOVE;
+         attackMove.goalX = gameScreen.team.statue.px;
+         attackMove.goalY = gameScreen.game.map.height / 2;
+         attackMove.realX = attackMove.goalX;
+         attackMove.realY = attackMove.goalY;
+         giant.isBossMovementLocked = true;
+         giant.ai.mayAttack = true;
+         giant.ai.mayMoveToAttack = true;
+         giant.ai.setCommand(gameScreen.game,attackMove);
       }
 
       private function spawnRebelBossRepresentative(gameScreen:GameScreen, game:StickWar, unitType:int, px:Number, py:Number, goalX:Number, goalY:Number) : Unit

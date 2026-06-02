@@ -6,10 +6,6 @@ package com.brockw.stickwar.engine.Ai
    
    public class ArcherAi extends RangedAi
    {
-      private static const BOSS_REAR_LINE_ADJUST_THRESHOLD:Number = 25;
-
-      private static const BOSS_REAR_LINE_IDLE_THRESHOLD:Number = 65;
-      
       public function ArcherAi(s:Archer)
       {
          super(s);
@@ -18,10 +14,6 @@ package com.brockw.stickwar.engine.Ai
       
       override public function update(game:StickWar) : void
       {
-         var targetDistance:Number = NaN;
-         var rearLineX:Number = NaN;
-         var shouldRearLineAdjust:Boolean = false;
-         var closestTarget:* = null;
          checkNextMove(game);
          if(unit.shouldStartCampaignBossEscape())
          {
@@ -34,40 +26,12 @@ package com.brockw.stickwar.engine.Ai
          if(Archer(unit).isBoss)
          {
             this.mayKite = true;
-            Archer(unit).updateBossRegroupState();
-            Archer(unit).tryBossCommandFireArrows(game);
-            if(Archer(unit).shouldBossRetreatRegroup())
+            Archer(unit).tryBossAbilities(game);
+            Archer(unit).isBossMovementLocked = false;
+            if(Archer(unit).handleBossExplosionSetupMovement(game))
             {
-               Archer(unit).bossRetreatAndRegroup(game);
+               return;
             }
-            if(currentCommand.type == UnitCommand.ATTACK_MOVE || currentCommand.type == UnitCommand.STAND || currentCommand.type == UnitCommand.HOLD)
-            {
-               rearLineX = Archer(unit).getBossRearLineX();
-               if(Math.abs(rearLineX - unit.px) > BOSS_REAR_LINE_ADJUST_THRESHOLD)
-               {
-                  closestTarget = this.getClosestTarget();
-                  if(closestTarget != null)
-                  {
-                     targetDistance = Math.abs(closestTarget.px - unit.px);
-                     if(!Archer(unit).inRange(closestTarget) || unit.team.direction * unit.px > unit.team.direction * rearLineX)
-                     {
-                        shouldRearLineAdjust = true;
-                        Archer(unit).isBossMovementLocked = true;
-                        unit.walk((rearLineX - unit.px) / 100,0,unit.team.direction);
-                        unit.faceDirection(closestTarget.px - unit.px);
-                        return;
-                     }
-                  }
-                  else if(Math.abs(rearLineX - unit.px) > BOSS_REAR_LINE_IDLE_THRESHOLD)
-                  {
-                     shouldRearLineAdjust = true;
-                     Archer(unit).isBossMovementLocked = true;
-                     unit.walk((rearLineX - unit.px) / 100,0,unit.team.direction);
-                     return;
-                  }
-               }
-            }
-            Archer(unit).isBossMovementLocked = Archer(unit).bossIsRegrouping || shouldRearLineAdjust || currentCommand.type == UnitCommand.MOVE;
          }
          if(unit.team == unit.team.game.team)
          {

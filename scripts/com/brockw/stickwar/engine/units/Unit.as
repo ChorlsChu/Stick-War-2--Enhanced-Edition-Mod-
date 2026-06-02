@@ -260,6 +260,20 @@ package com.brockw.stickwar.engine.units
       public var isHome:Boolean;
       
       private var reaperMc:reaperEffectMc;
+
+      private var slowReaperMc:reaperEffectMc;
+
+      private var slowReaperFrames:int;
+
+      private var eclipsorMarkMc:reaperEffectMc;
+
+      private var eclipsorMarkFrames:int;
+
+      private var confusionFrames:int;
+
+      private var reaperControlFallbackFrames:int;
+
+      private var reaperControlGlow:GlowFilter;
       
       private var poisonMc:poisonEffect;
       
@@ -272,6 +286,8 @@ package com.brockw.stickwar.engine.units
       private var _isTowerSpawned:Boolean;
 
       private var _suppressTowerSpawnVisual:Boolean;
+
+      private var _forceTowerSpawnVisual:Boolean;
       
       private var towerSpawnGlow:GlowFilter;
       
@@ -328,8 +344,13 @@ package com.brockw.stickwar.engine.units
          this._campaignBossEscapeStuckFrames = 0;
          this.isTowerSpawned = false;
          this.suppressTowerSpawnVisual = false;
+         this.forceTowerSpawnVisual = false;
          this.healthBar = new HealthBar();
          this.reaperCurseFrames = 0;
+         this.eclipsorMarkFrames = 0;
+         this.confusionFrames = 0;
+         this.reaperControlFallbackFrames = 0;
+         this.reaperControlGlow = new GlowFilter(16711680,0.9,10,10,3,1);
          this.chaosPoisonedFrames = game.xml.xml.Chaos.poisonDuration;
          this.reaperCurseFramesTotal = game.xml.xml.Chaos.Units.skelator.reaper.frames;
          this.reaperAmplification = game.xml.xml.Chaos.Units.skelator.reaper.amplification;
@@ -370,6 +391,73 @@ package com.brockw.stickwar.engine.units
          this.reaperMc.scaleY = 0.8;
          this.reaperCurseFrames = this.reaperCurseFramesTotal;
          this.reaperInflictor = inflictor;
+      }
+
+      public function applyEclipsorMark(frames:int) : void
+      {
+         if(frames <= 0 || !this.isAlive())
+         {
+            return;
+         }
+         this.removeMcChild(this.eclipsorMarkMc);
+         this.eclipsorMarkMc = new reaperEffectMc();
+         this.attachMcChild(this.eclipsorMarkMc);
+         this.eclipsorMarkMc.x = 0;
+         this.eclipsorMarkMc.y = this.healthBar.y - 10;
+         this.eclipsorMarkMc.scaleX = 0.75;
+         this.eclipsorMarkMc.scaleY = 0.75;
+         this.eclipsorMarkFrames = frames;
+      }
+
+      public function hasEclipsorMark() : Boolean
+      {
+         return this.eclipsorMarkFrames > 0;
+      }
+
+      public function consumeEclipsorMark() : Boolean
+      {
+         if(this.eclipsorMarkFrames <= 0)
+         {
+            return false;
+         }
+         this.eclipsorMarkFrames = 0;
+         this.removeMcChild(this.eclipsorMarkMc);
+         this.eclipsorMarkMc = null;
+         return true;
+      }
+
+      public function confuse(frames:int) : void
+      {
+         if(frames <= 0 || !this.isAlive() || this.isBossUnit || this.type == U_STATUE)
+         {
+            return;
+         }
+         this.confusionFrames = frames;
+      }
+
+      public function reaperControl(frames:int) : void
+      {
+         this.confuse(frames);
+         if(this.confusionFrames > 0)
+         {
+            this.selected = false;
+            this.isBossMovementLocked = true;
+            this.reaperControlFallbackFrames = 30 * 2;
+            if(this.reaperCurseFrames < frames)
+            {
+               this.reaperCurseFrames = frames;
+            }
+         }
+      }
+
+      public function isConfused() : Boolean
+      {
+         return this.confusionFrames > 0;
+      }
+
+      public function isReaperControlFallingBack() : Boolean
+      {
+         return this.confusionFrames > 0 && this.reaperControlFallbackFrames > 0;
       }
       
       public function canAttackAir() : Boolean
@@ -513,6 +601,7 @@ package com.brockw.stickwar.engine.units
          pz = 0;
          this._healTimeRemaining = 0;
          this.slowFramesRemaining = 0;
+         this.slowReaperFrames = 0;
          _mouseIsOver = false;
          this.isHome = true;
          this.isOnFire = false;
@@ -780,7 +869,24 @@ package com.brockw.stickwar.engine.units
          if(frames > this.slowFramesRemaining)
          {
             this.slowFramesRemaining = frames;
+            this.showSlowReaperEffect(frames);
          }
+      }
+
+      private function showSlowReaperEffect(frames:int) : void
+      {
+         if(frames <= 0 || this.reaperCurseFrames > 0)
+         {
+            return;
+         }
+         this.removeMcChild(this.slowReaperMc);
+         this.slowReaperMc = new reaperEffectMc();
+         this.attachMcChild(this.slowReaperMc);
+         this.slowReaperMc.x = 0;
+         this.slowReaperMc.y = this.healthBar.y - 10;
+         this.slowReaperMc.scaleX = 0.65;
+         this.slowReaperMc.scaleY = 0.65;
+         this.slowReaperFrames = frames;
       }
       
       protected function updateCommon(game:StickWar) : void
@@ -799,7 +905,10 @@ package com.brockw.stickwar.engine.units
          }
          if(this.reaperCurseFrames > 0)
          {
-            this.walk(this.team.direction,0,this.team.direction);
+            if(!this.isConfused())
+            {
+               this.walk(this.team.direction,0,this.team.direction);
+            }
             --this.reaperCurseFrames;
             if(this.reaperMc.currentFrame == this.reaperMc.totalFrames)
             {
@@ -813,6 +922,74 @@ package com.brockw.stickwar.engine.units
             {
                this.removeMcChild(this.reaperMc);
                this.reaperMc = null;
+            }
+         }
+         if(this.slowReaperFrames > 0)
+         {
+            --this.slowReaperFrames;
+            if(this.slowReaperMc != null)
+            {
+               if(this.slowReaperMc.currentFrame == this.slowReaperMc.totalFrames)
+               {
+                  this.slowReaperMc.gotoAndStop(1);
+               }
+               else
+               {
+                  this.slowReaperMc.nextFrame();
+               }
+            }
+            if(this.slowReaperFrames == 0)
+            {
+               this.removeMcChild(this.slowReaperMc);
+               this.slowReaperMc = null;
+            }
+         }
+         if(this.eclipsorMarkFrames > 0)
+         {
+            --this.eclipsorMarkFrames;
+            if(this.eclipsorMarkMc != null)
+            {
+               if(this.eclipsorMarkMc.currentFrame == this.eclipsorMarkMc.totalFrames)
+               {
+                  this.eclipsorMarkMc.gotoAndStop(1);
+               }
+               else
+               {
+                  this.eclipsorMarkMc.nextFrame();
+               }
+            }
+            if(this.eclipsorMarkFrames == 0)
+            {
+               this.removeMcChild(this.eclipsorMarkMc);
+               this.eclipsorMarkMc = null;
+            }
+         }
+         if(this.confusionFrames > 0)
+         {
+            --this.confusionFrames;
+            if(this.reaperControlFallbackFrames > 0)
+            {
+               --this.reaperControlFallbackFrames;
+            }
+            if(this.confusionFrames == 0)
+            {
+               this.reaperControlFallbackFrames = 0;
+               if(this.isBossMovementLocked && !this.isBossUnit)
+               {
+                  this.isBossMovementLocked = false;
+               }
+               if(this.ai != null)
+               {
+                  this.ai.clearReaperControlTarget();
+               }
+            }
+         }
+         else
+         {
+            this.reaperControlFallbackFrames = 0;
+            if(this.isBossMovementLocked && !this.isBossUnit)
+            {
+               this.isBossMovementLocked = false;
             }
          }
          if(this._healTimeRemaining > 0)
@@ -878,7 +1055,7 @@ package com.brockw.stickwar.engine.units
             this.cure();
          }
          var c:ColorTransform = this.mc.transform.colorTransform;
-         if(this.isTowerSpawned)
+         if(this.isTowerSpawned || this.forceTowerSpawnVisual)
          {
             if(this.suppressTowerSpawnVisual)
             {
@@ -931,6 +1108,10 @@ package com.brockw.stickwar.engine.units
           {
              this.removeMcChild(this.poisonMc);
           }
+         if(this.confusionFrames > 0 && Boolean(this.mc.mc))
+         {
+            this.mc.mc.filters = [this.reaperControlGlow];
+         }
          if(this.team.game.frame > this.lastWalkFrame + 1)
          {
             this._ddx = 0;
@@ -1348,7 +1529,7 @@ package com.brockw.stickwar.engine.units
          var medusaController:CampaignCutScene2 = null;
          var dmg:Number = NaN;
          var previousHealth:Number = this._health;
-         if(this._campaignBossEscaping && (this.type == U_SPEARTON || this.type == U_ARCHER || this.type == U_NINJA))
+         if(this._campaignBossEscaping && (this.type == U_SPEARTON || this.type == U_ARCHER || this.type == U_NINJA || this.type == U_KNIGHT || this.type == U_WINGIDON))
          {
             return;
          }
@@ -1382,9 +1563,18 @@ package com.brockw.stickwar.engine.units
             {
                dmg *= 1 + this.reaperAmplification;
             }
+            if(inflictor is Wingidon)
+            {
+               dmg = Wingidon(inflictor).modifyBossProjectileDamage(this,type,dmg);
+            }
             dmg /= this.team.healthModifier;
             dmg *= this.team.enemyTeam.damageModifier;
             this._health -= dmg;
+            if(this._campaignBossEscapeEnabled && !this._campaignBossEscaping && (this.type == U_SPEARTON || this.type == U_ARCHER || this.type == U_NINJA || this.type == U_KNIGHT || this.type == U_WINGIDON || this.type == U_SKELATOR) && this._health <= this.maxHealth * 0.05)
+            {
+               this._health = Math.max(1,this.maxHealth * 0.05);
+               this.startCampaignBossEscape();
+            }
             if(this.team != null && this.team.game != null && this.team.game.gameScreen is CampaignGameScreen)
             {
                campaignScreen = CampaignGameScreen(this.team.game.gameScreen);
@@ -1397,6 +1587,10 @@ package com.brockw.stickwar.engine.units
                   medusaController = CampaignCutScene2(campaignScreen.campaignController);
                   medusaController.onMedusaBossDamaged(previousHealth,this._health);
                }
+            }
+            if(inflictor is Wingidon && this._health < previousHealth)
+            {
+               Wingidon(inflictor).onBossProjectileDamagedTarget(this,type,amount);
             }
             if(this._health <= 0)
             {
@@ -1433,8 +1627,10 @@ package com.brockw.stickwar.engine.units
       private function cleanUpStats() : void
       {
          this.removeMcChild(this.reaperMc);
+         this.removeMcChild(this.slowReaperMc);
          this.removeMcChild(this.poisonMc);
          this.removeMcChild(this.stunMc);
+         this.removeMcChild(this.eclipsorMarkMc);
       }
 
       private function attachMcChild(child:DisplayObject) : void
@@ -1946,6 +2142,16 @@ package com.brockw.stickwar.engine.units
       {
          this._suppressTowerSpawnVisual = value;
       }
+
+      public function get forceTowerSpawnVisual() : Boolean
+      {
+         return this._forceTowerSpawnVisual;
+      }
+
+      public function set forceTowerSpawnVisual(value:Boolean) : void
+      {
+         this._forceTowerSpawnVisual = value;
+      }
       
       public function get arrowDeath() : Boolean
       {
@@ -2039,7 +2245,7 @@ package com.brockw.stickwar.engine.units
 
       public function shouldStartCampaignBossEscape() : Boolean
       {
-         return this._campaignBossEscapeEnabled && !this._campaignBossEscaping && this.health <= this.maxHealth * 0.25;
+         return this._campaignBossEscapeEnabled && !this._campaignBossEscaping && this.health <= this.maxHealth * 0.05;
       }
 
       public function startCampaignBossEscape() : void

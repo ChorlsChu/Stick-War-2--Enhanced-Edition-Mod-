@@ -2,13 +2,18 @@ package com.brockw.stickwar.engine.projectile
 {
    import com.brockw.game.Util;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.units.Skelator;
    import com.brockw.stickwar.engine.units.Unit;
    import flash.display.MovieClip;
+   import flash.filters.GlowFilter;
+   import flash.geom.ColorTransform;
    
    public class Reaper extends DirectedProjectile
    {
       
       private var spellMc:MovieClip;
+
+      private static const BOSS_REAPER_CONTROL_FRAMES:int = 30 * 10;
       
       public var target:Unit;
       
@@ -26,8 +31,22 @@ package com.brockw.stickwar.engine.projectile
       {
          var dz:Number = NaN;
          visible = true;
+         if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+         {
+            this.spellMc.transform.colorTransform = new ColorTransform(0.35,1.35,0.35,1,20,120,20,0);
+            this.spellMc.filters = [new GlowFilter(65280,1,12,12,4,1)];
+         }
+         else
+         {
+            this.spellMc.transform.colorTransform = new ColorTransform();
+            this.spellMc.filters = [];
+         }
          if(!this.target.isAlive())
          {
+            if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+            {
+               Skelator(this.inflictor).resolveBossReaperControl(false);
+            }
             this.visible = false;
             _inFlight = false;
             return;
@@ -59,6 +78,12 @@ package com.brockw.stickwar.engine.projectile
          {
             this.target.reaperCurse(inflictor);
             this.target.poison(this.poisonDamage);
+            if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+            {
+               this.target.reaperControl(BOSS_REAPER_CONTROL_FRAMES);
+               this.target.poison(this.target.team.game.xml.xml.Chaos.Units.medusa.poison.poison);
+               Skelator(this.inflictor).resolveBossReaperControl(true);
+            }
             this.target.damage(0,this.damageToDeal,null);
             this.target.stun(this.stunTime);
             this.target.slow(this.slowFrames);

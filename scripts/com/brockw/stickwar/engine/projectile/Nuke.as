@@ -8,6 +8,8 @@ package com.brockw.stickwar.engine.projectile
    public class Nuke extends Projectile
    {
       public var suppressVisual:Boolean;
+
+      public var controlledFriendlyFire:Boolean;
       
       internal var spellMc:MovieClip;
       
@@ -20,6 +22,7 @@ package com.brockw.stickwar.engine.projectile
          super();
          type = NUKE;
          this.suppressVisual = false;
+         this.controlledFriendlyFire = false;
          this.spellMc = new explosionBomber();
          this.addChild(this.spellMc);
          this.explosionRadius = game.xml.xml.Chaos.Units.bomber.explosionRadius;
@@ -51,7 +54,7 @@ package com.brockw.stickwar.engine.projectile
       {
          var minDamage:Number = NaN;
          var maxDamage:Number = NaN;
-         if(unit.team != this.team)
+         if(!this.controlledFriendlyFire && unit.team != this.team || this.controlledFriendlyFire && unit.team == this.team && unit != this.inflictor && !unit.isBossUnit && unit.type != Unit.U_STATUE)
          {
             if(Math.pow(unit.px - this.px,2) + Math.pow(unit.py - this.py,2) < Math.pow(this.explosionRadius,2))
             {

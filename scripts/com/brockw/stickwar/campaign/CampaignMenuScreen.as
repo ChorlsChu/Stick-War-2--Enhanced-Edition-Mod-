@@ -14,8 +14,12 @@ package com.brockw.stickwar.campaign
    import flash.net.URLRequest;
    import flash.net.navigateToURL;
    import flash.events.SecurityErrorEvent;
+   import flash.media.Sound;
+   import flash.media.SoundChannel;
+   import flash.media.SoundTransform;
    import flash.system.Security;
    import flash.utils.Dictionary;
+   import flash.utils.getDefinitionByName;
    import flash.utils.getTimer;
    
    public class CampaignMenuScreen extends Screen
@@ -36,6 +40,14 @@ package com.brockw.stickwar.campaign
       private static const SCREEN_HEIGHT:int = 700;
       
       private static const SCREEN_WIDTH:int = 850;
+
+      private static const INTRO_VIDEO_LINKAGE:String = "IntroVideoMc";
+
+      private static const INTRO_AUDIO_LINKAGE:String = "StickWar_2_Intro_Audio";
+
+      private static const INTRO_VIDEO_WIDTH:int = 640;
+
+      private static const INTRO_VIDEO_HEIGHT:int = 360;
 
       private var isFirst:Boolean;
       
@@ -64,6 +76,12 @@ package com.brockw.stickwar.campaign
       private var timeSinceTriedToStartYoutube:Number;
       
       private var hasInitStickpageLink:Boolean;
+
+      private var introVideo:MovieClip;
+
+      private var introVideoFailed:Boolean;
+
+      private var introAudioChannel:SoundChannel;
       
       public function CampaignMenuScreen(main:BaseMain)
       {
@@ -87,15 +105,7 @@ package com.brockw.stickwar.campaign
          this.buttons = [];
          this.buttonsHit = new Dictionary();
          Security.allowDomain("stickempires.com");
-         urlRequest = new URLRequest("http://www.stickempires.com/getIntroLink");
-         urlLoader = new URLLoader();
-         urlLoader.dataFormat = URLLoaderDataFormat.TEXT;
-         urlLoader.addEventListener(Event.COMPLETE,this.handleComplete);
-         urlLoader.addEventListener(IOErrorEvent.IO_ERROR,this.handleIntroLinkLoadFailure);
-         urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR,this.handleIntroLinkSecurityFailure);
-         urlLoader.load(urlRequest);
-         this.youtubeLoader = new YoutubeLoader("w6q9EoFmu0w");
-         addChild(this.youtubeLoader);
+         this.youtubeLoader = null;
          this.hasInitStickpageLink = false;
          this.mc.introBrokenMc.visible = false;
       }
@@ -105,7 +115,10 @@ package com.brockw.stickwar.campaign
          var link:String = e.target.data;
          if(link != "")
          {
-            removeChild(this.youtubeLoader);
+            if(this.youtubeLoader != null && contains(this.youtubeLoader))
+            {
+               removeChild(this.youtubeLoader);
+            }
             this.youtubeLoader = new YoutubeLoader(link);
             addChild(this.youtubeLoader);
          }
@@ -154,15 +167,72 @@ package com.brockw.stickwar.campaign
          this.state = S_INTRO;
          this.main.soundManager.playSoundInBackground("");
          this.timeSinceTriedToStartYoutube = getTimer();
+         this.startIntroVideo();
       }
-      
+
+      private function startIntroVideo() : void
+      {
+         var introClass:Class = null;
+         var introAudioClass:Class = null;
+         var introAudio:Sound = null;
+         this.stopIntroVideo();
+         this.introVideoFailed = false;
+         try
+         {
+            introClass = Class(getDefinitionByName(INTRO_VIDEO_LINKAGE));
+            introAudioClass = Class(getDefinitionByName(INTRO_AUDIO_LINKAGE));
+            introAudio = Sound(new introAudioClass());
+            this.introVideo = MovieClip(new introClass());
+            this.positionIntroVideo();
+            this.introVideo.gotoAndPlay(1);
+            addChild(this.introVideo);
+            this.introAudioChannel = introAudio.play(0,0,new SoundTransform(this.main.soundManager.isMusic ? 1.5 : 0));
+         }
+         catch(e:SecurityError)
+         {
+            this.introVideoFailed = true;
+         }
+         catch(e:Error)
+         {
+            this.introVideoFailed = true;
+         }
+      }
+
+      private function stopIntroVideo() : void
+      {
+         if(this.introVideo != null)
+         {
+            this.introVideo.stop();
+            if(contains(this.introVideo))
+            {
+               removeChild(this.introVideo);
+            }
+            this.introVideo = null;
+         }
+         if(this.introAudioChannel != null)
+         {
+            this.introAudioChannel.stop();
+            this.introAudioChannel = null;
+         }
+      }
+
+      private function positionIntroVideo() : void
+      {
+         if(this.introVideo == null)
+         {
+            return;
+         }
+         this.introVideo.x = SCREEN_WIDTH / 2 - INTRO_VIDEO_WIDTH / 2;
+         this.introVideo.y = SCREEN_HEIGHT / 2 - INTRO_VIDEO_HEIGHT / 2;
+      }
+
       private function stickpageLink(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("http://www.stickpage.com");
+         var url:URLRequest = new URLRequest("https://github.com/ChorlsChu/Stick-War-2--Enhanced-Edition-Mod-");
          navigateToURL(url,"_blank");
          if(this.main.tracker != null)
          {
-            this.main.tracker.trackEvent("link","http://www.stickpage.com");
+            this.main.tracker.trackEvent("link","https://github.com/ChorlsChu/Stick-War-2--Enhanced-Edition-Mod-");
          }
       }
       
@@ -197,37 +267,41 @@ package com.brockw.stickwar.campaign
          this.mc.creditsButton.visible = false;
          if(this.state == S_INTRO)
          {
-            if(getTimer() - this.timeSinceTriedToStartYoutube > 3 * 1000 && !this.youtubeLoader.isWorking())
+            if(getTimer() - this.timeSinceTriedToStartYoutube > 3 * 1000 && this.introVideoFailed)
             {
-               this.youtubeLoader.visible = false;
-               this.youtubeLoader.stopVideo();
+               this.stopIntroVideo();
                this.mc.introBrokenMc.visible = true;
                this.mc.introBrokenMc.buttonMode = true;
             }
             else
             {
                this.mc.introBrokenMc.buttonMode = false;
-               if(Boolean(this.youtubeLoader))
+               if(this.introVideo != null)
                {
-                  this.youtubeLoader.visible = true;
-                  this.youtubeLoader.playVideo();
-                  this.youtubeLoader.x = SCREEN_WIDTH / 2 - 640 / 2;
-                  this.youtubeLoader.y = SCREEN_HEIGHT / 2 - 360 / 2;
+                  this.introVideo.visible = true;
+                  this.positionIntroVideo();
+                  if(contains(this.mc))
+                  {
+                     setChildIndex(this.mc,numChildren - 1);
+                     if(this.mc.introOverlay != null)
+                     {
+                        this.mc.introOverlay.visible = true;
+                     }
+                     setChildIndex(this.introVideo,numChildren - 1);
+                  }
+                  if(this.introVideo.currentFrame >= this.introVideo.totalFrames)
+                  {
+                     this.skipButton();
+                  }
                }
                this.mc.introOverlay.visible = true;
-               if(this.youtubeLoader.getTimePlayed() > 105)
-               {
-                  this.youtubeLoader.pauseVideo();
-                  this.skipButton();
-               }
                this.mc.backButton.visible = false;
                this.mc.creditsButton.visible = false;
             }
          }
-         else if(Boolean(this.youtubeLoader))
+         else
          {
-            this.youtubeLoader.visible = false;
-            this.youtubeLoader.stopVideo();
+            this.stopIntroVideo();
             this.mc.introOverlay.visible = false;
          }
          if(Boolean(this.mc.difficultySelectOverlay))
@@ -407,6 +481,7 @@ package com.brockw.stickwar.campaign
       
       private function skipButton() : void
       {
+         this.stopIntroVideo();
          this.main.showScreen("campaignMap",false,true);
       }
       
@@ -468,31 +543,31 @@ package com.brockw.stickwar.campaign
       
       private function onlineButton(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("http://www.stickempires.com");
+         var url:URLRequest = new URLRequest("https://aseplayer.github.io/sw-mods/");
          navigateToURL(url,"_blank");
          if(this.main.tracker != null)
          {
-            this.main.tracker.trackEvent("link","http://www.stickempires.com");
+            this.main.tracker.trackEvent("link","https://aseplayer.github.io/sw-mods/");
          }
       }
       
       private function stickWarButton(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("http://www.stickpage.com/stickwargame.shtml");
+         var url:URLRequest = new URLRequest("https://www.youtube.com/watch?v=04q4UsWZWG8");
          navigateToURL(url,"_blank");
          if(this.main.tracker != null)
          {
-            this.main.tracker.trackEvent("link","http://www.stickpage.com/stickwargame.shtml");
+            this.main.tracker.trackEvent("link","https://www.youtube.com/watch?v=04q4UsWZWG8");
          }
       }
       
       private function openIntroLink(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("http://www.stickpage.com/stickwar2orderempireintro.shtml");
+         var url:URLRequest = new URLRequest("https://www.youtube.com/watch?v=w6q9EoFmu0w");
          navigateToURL(url,"_blank");
          if(this.main.tracker != null)
          {
-            this.main.tracker.trackEvent("link","http://www.stickpage.com/stickwar2orderempireintro.shtml");
+            this.main.tracker.trackEvent("link","https://www.youtube.com/watch?v=w6q9EoFmu0w");
          }
       }
       
@@ -504,7 +579,11 @@ package com.brockw.stickwar.campaign
          this.mc.creditsButton.removeEventListener(MouseEvent.CLICK,this.creditsButton);
          this.buttons = [];
          this.keyboard.cleanUp();
-         this.youtubeLoader.stopVideo();
+         this.stopIntroVideo();
+         if(this.youtubeLoader != null)
+         {
+            this.youtubeLoader.stopVideo();
+         }
          this.mouseState.cleanUp();
          this.mc.mainPanel.onlineButton.removeEventListener(MouseEvent.CLICK,this.onlineButton);
          this.mc.mainPanel.stickWarButton.removeEventListener(MouseEvent.CLICK,this.stickWarButton);

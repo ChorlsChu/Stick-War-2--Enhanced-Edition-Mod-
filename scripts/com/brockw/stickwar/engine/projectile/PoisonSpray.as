@@ -16,6 +16,8 @@ package com.brockw.stickwar.engine.projectile
       public var endX:Number;
       
       public var endY:Number;
+
+      public var controlledFriendlyFire:Boolean;
       
       public function PoisonSpray(game:StickWar)
       {
@@ -23,6 +25,7 @@ package com.brockw.stickwar.engine.projectile
          type = POISON_SPRAY;
          this.spellMc = new poisonMagikilleffect();
          this.addChild(this.spellMc);
+         this.controlledFriendlyFire = false;
       }
       
       override public function cleanUp() : void
@@ -38,7 +41,7 @@ package com.brockw.stickwar.engine.projectile
          this.spellMc.nextFrame();
          this.scaleX = 1 * (game.backScale + py / game.map.height * (game.frontScale - game.backScale));
          this.scaleY = 1 * (game.backScale + py / game.map.height * (game.frontScale - game.backScale));
-         var units:Array = team.enemyTeam.units;
+         var units:Array = this.controlledFriendlyFire ? team.units : team.enemyTeam.units;
          var n:int = int(units.length);
          var r:Number = this.spellMc.currentFrame / 20;
          if(r > 1)
@@ -49,7 +52,7 @@ package com.brockw.stickwar.engine.projectile
          var ry:Number = r * (this.endY - this.startY) + this.startY;
          for(var i:int = 0; i < n; i++)
          {
-            if(Unit(units[i]).team != this.team && units[i] is Unit)
+            if(units[i] is Unit && (!this.controlledFriendlyFire && Unit(units[i]).team != this.team || this.controlledFriendlyFire && Unit(units[i]).team == this.team && Unit(units[i]) != this.inflictor && !Unit(units[i]).isBossUnit && Unit(units[i]).type != Unit.U_STATUE))
             {
                if(Math.pow(Unit(units[i]).px - rx,2) + Math.pow(Unit(units[i]).py - ry,2) < Math.pow(game.xml.xml.Order.Units.magikill.poisonSpray.area,2))
                {

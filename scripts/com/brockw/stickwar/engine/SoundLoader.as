@@ -18,7 +18,6 @@ package com.brockw.stickwar.engine
          soundManager.addSound("speartonHoghSound",speartonHoghSound,1);
          soundManager.addSound("OrderVictory",OrderVictory,2.4);
          soundManager.addSound("OrderDefeat",OrderDefeat,2.4);
-         soundManager.addSound("orderInGame",OrderMainLoop,1,3);
          soundManager.addSound("chaosInGame",ChaosMainLoop,1,3);
          soundManager.addSound("lobbyMusic",LobbyMusic,1,2.4);
          soundManager.addSound("loginMusic",LoginMusic,1,2.4);
@@ -194,6 +193,10 @@ package com.brockw.stickwar.engine
          soundManager.addSound("GiantGrowl5",GiantGrowl5,1,3);
          soundManager.addSound("GiantGrowl6",GiantGrowl6,1,3);
          soundManager.addSound("BodyfallSound",BodyfallSound,1,6);
+         soundManager.addSound("battleOfTheShadowElves",Battle_Of_The_Shadow_Elves,1,2);
+         soundManager.addSound("enteringTheStronghold",Entering_The_Stronghold,1,2);
+         soundManager.addSound("fieldOfMemories",Field_Of_Memories,1,1);
+         soundManager.addSound("orderInGame",Battle_Of_The_Shadow_Elves,1,2);
       }
    }
 }

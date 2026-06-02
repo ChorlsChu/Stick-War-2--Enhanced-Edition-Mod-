@@ -44,12 +44,10 @@ package com.brockw.stickwar
          this.isLocked = false;
          if(goodPattern.test(url) == true)
          {
-            trace("This flash is hosted on stickempires");
          }
          else
          {
             this.isLocked = true;
-            trace("This flash is not hosted on stickempires");
          }
          this.isLocked = false;
          var _fullInfo:String = Capabilities.version;
@@ -59,7 +57,6 @@ package com.brockw.stickwar
          var _minerVersion:Number = Number(_versionSplitArr[1]);
          this.version = _versionInfo;
          this.minorVersion = _minerVersion;
-         trace(this.version,this.minorVersion);
          if(this.version < 11 || this.version == 11 && this.minorVersion < 2)
          {
             this.isLocked = true;
@@ -116,12 +113,10 @@ package com.brockw.stickwar
       
       private function beginLoading() : void
       {
-         trace("begin Loading");
       }
       
       private function dispose() : void
       {
-         trace("dispose preloader");
          removeEventListener(Event.ENTER_FRAME,this.onEnterFrame);
          if(Boolean(this._preloaderBackground))
          {

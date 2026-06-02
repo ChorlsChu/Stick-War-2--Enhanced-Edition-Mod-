@@ -45,6 +45,7 @@ package com.brockw.stickwar.engine
          var i:int = 0;
          var d:DisplayObject = null;
          var m:MovieClip = null;
+         this.removeUnselectableUnits();
          if(this.profilePic != null)
          {
             if(game.gameScreen.hasEffects)
@@ -94,6 +95,14 @@ package com.brockw.stickwar.engine
       
       public function add(unit:Unit) : void
       {
+         if(unit == null || unit.isConfused())
+         {
+            if(unit != null)
+            {
+               unit.selected = false;
+            }
+            return;
+         }
          if(this.selected.indexOf(unit) != -1)
          {
             return;
@@ -158,6 +167,64 @@ package com.brockw.stickwar.engine
          this.selected.splice(0,this.selected.length);
          this.unitTypeKeys.splice(0,this.unitTypeKeys.length);
          this.setProfilePic(null);
+      }
+
+      private function removeUnselectableUnits() : void
+      {
+         var i:int = 0;
+         var unit:Unit = null;
+         var oldSelection:Array = null;
+         var key:* = undefined;
+         var remaining:Array = [];
+         for each(unit in this.selected)
+         {
+            if(unit != null && unit.isConfused())
+            {
+               unit.selected = false;
+               this._hasChanged = true;
+            }
+            else if(unit != null)
+            {
+               remaining.push(unit);
+            }
+         }
+         if(remaining.length == this.selected.length)
+         {
+            return;
+         }
+         oldSelection = remaining;
+         this._interactsWith = 0;
+         this.currentUnitType = -1;
+         for(key in this.unitTypes)
+         {
+            delete this.unitTypes[key];
+         }
+         this.unitTypeKeys.splice(0,this.unitTypeKeys.length);
+         this.selected.splice(0,this.selected.length);
+         for(i = 0; i < oldSelection.length; i++)
+         {
+            unit = oldSelection[i];
+            this.selected.push(unit);
+            if(!(unit.type in this.unitTypes))
+            {
+               this.unitTypes[unit.type] = [];
+               this.currentUnitType = unit.type;
+               this.unitTypeKeys.push(unit.type);
+               this.unitTypeKeys.sort();
+               this._interactsWith |= unit.interactsWith;
+            }
+            this.unitTypes[unit.type].push(unit);
+         }
+         if(this.currentUnitType == -1)
+         {
+            this.gameScreen.userInterface.actionInterface.setEntity(null);
+            this.setProfilePic(null);
+         }
+         else
+         {
+            this.gameScreen.userInterface.actionInterface.setEntity(this.unitTypes[this.currentUnitType][0]);
+            this.setProfilePic(this.gameScreen.game.unitFactory.getProfile(this.currentUnitType));
+         }
       }
       
       public function get unitTypes() : Dictionary

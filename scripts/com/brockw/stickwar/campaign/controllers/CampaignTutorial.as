@@ -114,6 +114,10 @@ package com.brockw.stickwar.campaign.controllers
       private var hasSpawnedSpearton:Boolean;
 
       private var hasIssuedPostTutorialAttack:Boolean;
+
+      private var lastState:int;
+
+      private var speartonAttackRefreshCounter:int;
       
       public function CampaignTutorial(gameScreen:GameScreen)
       {
@@ -130,6 +134,8 @@ package com.brockw.stickwar.campaign.controllers
          this.message = null;
          this.hasSpawnedSpearton = false;
          this.hasIssuedPostTutorialAttack = false;
+         this.lastState = int.MIN_VALUE;
+         this.speartonAttackRefreshCounter = 0;
       }
       
       private function skipTutorialClick(e:Event) : void
@@ -165,6 +171,75 @@ package com.brockw.stickwar.campaign.controllers
          this._gameScreen.userInterface.isGlobalsEnabled = true;
          this._gameScreen.team.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = 1;
       }
+
+      private function hasEnteredState() : Boolean
+      {
+         if(this.lastState == this.state)
+         {
+            return false;
+         }
+         this.lastState = this.state;
+         this.speartonAttackRefreshCounter = 0;
+         return true;
+      }
+
+      private function commandTutorialSpeartonAttack(gameScreen:GameScreen) : void
+      {
+         var u:UnitMove = null;
+         if(this.spearton1 == null || this.spearton1.isDead)
+         {
+            return;
+         }
+         u = new UnitMove();
+         u.moveType = UnitCommand.ATTACK_MOVE;
+         u.units.push(this.spearton1);
+         u.owner = gameScreen.team.id;
+         u.arg0 = gameScreen.team.homeX;
+         u.arg1 = gameScreen.team.game.map.height / 2;
+         u.execute(gameScreen.team.game);
+      }
+
+      private function shouldRefreshTutorialSpeartonAttack() : Boolean
+      {
+         ++this.speartonAttackRefreshCounter;
+         if(this.speartonAttackRefreshCounter < 30)
+         {
+            return false;
+         }
+         this.speartonAttackRefreshCounter = 0;
+         return true;
+      }
+
+      private function commandSwordwrathMoveNearBase(gameScreen:GameScreen) : void
+      {
+         var moveUnits:UnitMove = null;
+         if(this.s1 == null || this.s2 == null)
+         {
+            return;
+         }
+         moveUnits = new UnitMove();
+         moveUnits.owner = gameScreen.game.team.id;
+         moveUnits.moveType = UnitCommand.MOVE;
+         moveUnits.arg0 = gameScreen.game.team.homeX + 1000;
+         moveUnits.arg1 = gameScreen.game.map.height / 2;
+         moveUnits.units.push(this.s1.id);
+         moveUnits.units.push(this.s2.id);
+         moveUnits.execute(gameScreen.game);
+      }
+
+      private function finishSpeartonTutorialFight(gameScreen:GameScreen) : void
+      {
+         var game:StickWar = null;
+         this.state = S_GOOD_LUCK;
+         this.popBefore = gameScreen.team.population;
+         gameScreen.team.gold = 150;
+         gameScreen.team.game.team.unitsAvailable[Unit.U_MINER] = 1;
+         game = gameScreen.game;
+         game.team.spawnUnitGroup([Unit.U_MINER,Unit.U_MINER]);
+         game.team.enemyTeam.spawnUnitGroup([Unit.U_MINER,Unit.U_MINER,Unit.U_SPEARTON]);
+         game.team.gold = 500;
+         game.team.defend(true);
+      }
       
       override public function update(gameScreen:GameScreen) : void
       {
@@ -173,17 +248,17 @@ package com.brockw.stickwar.campaign.controllers
          var u1:Swordwrath = null;
          var u2:Swordwrath = null;
          var unit:Unit = null;
-         var holdUnits:UnitMove = null;
          var g:Unit = null;
-         var u:UnitMove = null;
          var spearton2:Spearton = null;
          var notGarrisoned:Boolean = false;
          var notDefending:Boolean = false;
+         var enteredState:Boolean = false;
          super.update(gameScreen);
          if(gameScreen.game.showGameOverAnimation)
          {
             return;
          }
+         enteredState = this.hasEnteredState();
          if(gameScreen.game.map.hills.length != 0)
          {
             hill = gameScreen.game.map.hills.pop();
@@ -363,18 +438,14 @@ package com.brockw.stickwar.campaign.controllers
                this.s1.selected = false;
                this.s2.selected = false;
             }
+            if(enteredState)
+            {
+               this.commandSwordwrathMoveNearBase(gameScreen);
+            }
             this.message.setMessage("Click down here on the mini map to quickly navigate back to you castle.","Step #5",0,"voiceTutorial5",true);
             this.arrow.visible = true;
             this.arrow.x = gameScreen.game.stage.stageWidth / 2 - 90;
             this.arrow.y = gameScreen.game.stage.stageHeight - 115;
-            holdUnits = new UnitMove();
-            holdUnits.owner = gameScreen.game.team.id;
-            holdUnits.moveType = UnitCommand.HOLD;
-            holdUnits.arg0 = gameScreen.game.team.homeX + 1000;
-            holdUnits.arg1 = gameScreen.game.map.height / 2;
-            holdUnits.units.push(this.s1.id);
-            holdUnits.units.push(this.s2.id);
-            holdUnits.execute(gameScreen.game);
          }
          else if(this.state == S_SELECT_MINER)
          {
@@ -390,14 +461,6 @@ package com.brockw.stickwar.campaign.controllers
             this.arrow.visible = true;
             this.arrow.x = this.m1.x + gameScreen.game.battlefield.x;
             this.arrow.y = this.m1.y - this.m1.pheight * 0.8 + gameScreen.game.battlefield.y;
-            holdUnits = new UnitMove();
-            holdUnits.owner = gameScreen.game.team.id;
-            holdUnits.moveType = UnitCommand.MOVE;
-            holdUnits.arg0 = gameScreen.game.team.homeX + 1000;
-            holdUnits.arg1 = gameScreen.game.map.height / 2;
-            holdUnits.units.push(this.s1.id);
-            holdUnits.units.push(this.s2.id);
-            holdUnits.execute(gameScreen.game);
          }
          else if(this.state == S_PRAY)
          {
@@ -557,13 +620,10 @@ package com.brockw.stickwar.campaign.controllers
             gameScreen.userInterface.isGlobalsEnabled = true;
             gameScreen.userInterface.isSlowCamera = true;
             gameScreen.game.targetScreenX = this.spearton1.px - gameScreen.game.map.screenWidth / 2;
-            u = new UnitMove();
-            u.moveType = UnitCommand.ATTACK_MOVE;
-            u.units.push(this.spearton1);
-            u.owner = gameScreen.team.id;
-            u.arg0 = gameScreen.team.homeX;
-            u.arg1 = gameScreen.team.game.map.height / 2;
-            u.execute(gameScreen.team.game);
+            if(enteredState || this.shouldRefreshTutorialSpeartonAttack())
+            {
+               this.commandTutorialSpeartonAttack(gameScreen);
+            }
             this.message.setMessage("Hit the defend button below to send out your units.","Step #13",0,"voiceTutorial19",true);
             this.message.visible = true;
             this.arrow.visible = true;
@@ -582,13 +642,10 @@ package com.brockw.stickwar.campaign.controllers
             this.arrow.visible = true;
             this.arrow.x = this.spearton1.x + gameScreen.game.battlefield.x;
             this.arrow.y = this.spearton1.y - this.spearton1.pheight * 0.8 + gameScreen.game.battlefield.y;
-            u = new UnitMove();
-            u.moveType = UnitCommand.ATTACK_MOVE;
-            u.units.push(this.spearton1);
-            u.owner = gameScreen.team.id;
-            u.arg0 = gameScreen.team.homeX;
-            u.arg1 = gameScreen.team.game.map.height / 2;
-            u.execute(gameScreen.team.game);
+            if(enteredState || this.shouldRefreshTutorialSpeartonAttack())
+            {
+               this.commandTutorialSpeartonAttack(gameScreen);
+            }
          }
          else if(this.state == S_KILL_SPEARTON)
          {
@@ -628,7 +685,10 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(this.o1 != null)
          {
-            this.o1.ai.setCommand(game,new StandCommand(game));
+            if(enteredState || gameScreen.game.frame % 30 == 0)
+            {
+               this.o1.ai.setCommand(game,new StandCommand(game));
+            }
          }
          if(this.state == S_SET_UP)
          {
@@ -816,7 +876,11 @@ package com.brockw.stickwar.campaign.controllers
          }
          else if(this.state == S_HIT_DEFEND)
          {
-            if(this.message.hasFinishedPlayingSound() && gameScreen.team.currentAttackState == Team.G_DEFEND)
+            if(this.spearton1.isDead)
+            {
+               this.finishSpeartonTutorialFight(gameScreen);
+            }
+            else if(this.message.hasFinishedPlayingSound() && gameScreen.team.currentAttackState == Team.G_DEFEND)
             {
                this.state = S_KILL_SPEARTON;
             }
@@ -825,15 +889,7 @@ package com.brockw.stickwar.campaign.controllers
          {
             if(this.message.hasFinishedPlayingSound() && this.spearton1.isDead)
             {
-               this.state = S_GOOD_LUCK;
-               this.popBefore = gameScreen.team.population;
-               gameScreen.team.gold = 150;
-               gameScreen.team.game.team.unitsAvailable[Unit.U_MINER] = 1;
-               game = gameScreen.game;
-               game.team.spawnUnitGroup([Unit.U_MINER,Unit.U_MINER]);
-               game.team.enemyTeam.spawnUnitGroup([Unit.U_MINER,Unit.U_MINER,Unit.U_SPEARTON]);
-               game.team.gold = 500;
-               game.team.defend(true);
+               this.finishSpeartonTutorialFight(gameScreen);
             }
          }
          else if(this.state == S_GOOD_LUCK)

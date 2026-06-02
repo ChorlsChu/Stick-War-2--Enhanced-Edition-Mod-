@@ -7,7 +7,6 @@ package com.brockw.stickwar.campaign
    import flash.events.MouseEvent;
    import flash.net.URLRequest;
    import flash.net.navigateToURL;
-   import flash.system.System;
    
    public class EndOfGameSummary extends Screen
    {
@@ -117,6 +116,7 @@ package com.brockw.stickwar.campaign
          }
          this.summaryMc.endOfGameText.text += "\n\n" + "Total time (including retries): " + PostGameScreen.getTimeFormat(total);
          this.summaryMc.endOfGameText.text += "\n" + "Best time: " + PostGameScreen.getTimeFormat(best);
+         this.main.campaign.save();
          addEventListener(Event.ENTER_FRAME,this.update);
          this.summaryMc.buttonFade.mouseEnabled = false;
          this.summaryMc.share.addEventListener(MouseEvent.CLICK,this.share);
@@ -133,11 +133,11 @@ package com.brockw.stickwar.campaign
       
       private function playOnline(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("http://www.stickempires.com");
+         var url:URLRequest = new URLRequest("https://aseplayer.github.io/sw-mods/");
          navigateToURL(url,"_blank");
          if(this.main.tracker != null)
          {
-            this.main.tracker.trackEvent("link","http://www.stickempires.com");
+            this.main.tracker.trackEvent("link","https://aseplayer.github.io/sw-mods/");
          }
          this.main.soundManager.playSoundFullVolume("clickButton");
       }
@@ -150,9 +150,8 @@ package com.brockw.stickwar.campaign
       
       private function share(e:Event) : void
       {
-         this.selectInCount = 2;
-         this.hasShared = true;
-         System.setClipboard(this.summaryMc.endOfGameText.text);
+         this.main.campaign.save();
+         this.main.showScreen("campaignMap",false,true);
          this.main.soundManager.playSoundFullVolume("clickButton");
       }
       

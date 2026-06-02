@@ -6,15 +6,17 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
+   import flash.geom.ColorTransform;
    
    public class Spearton extends Unit
    {
       private static const BOSS_WEAPON_SKIN:String = "Golden Jaged";
       
-      private static const BOSS_ARMOR_SKIN:String = "Gladiator Helmet";
+      private static const BOSS_ARMOR_SKIN:String = "HedgeHog Helmet";
       
       private static const BOSS_MISC_SKIN:String = "Lion Sheild";
       
@@ -352,10 +354,28 @@ package com.brockw.stickwar.engine.units
          if(this.isBoss)
          {
             Spearton.setItem(_speartonMc(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
+            this.applyBossHelmetTint();
          }
          else if(!hasDefaultLoadout)
          {
             Spearton.setItem(_speartonMc(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
+            this.clearBossHelmetTint();
+         }
+      }
+
+      private function applyBossHelmetTint() : void
+      {
+         if(Boolean(_mc.mc.helm))
+         {
+            _mc.mc.helm.transform.colorTransform = new ColorTransform(1,0.82,0.18,1,90,55,0,0);
+         }
+      }
+
+      private function clearBossHelmetTint() : void
+      {
+         if(Boolean(_mc.mc.helm))
+         {
+            _mc.mc.helm.transform.colorTransform = new ColorTransform();
          }
       }
       
@@ -530,6 +550,7 @@ package com.brockw.stickwar.engine.units
             return;
          }
          this._isBoss = true;
+         this.isBossUnit = true;
          this.bossAbilitySpawnLockFrames = 30 * 2;
          damageToDeal *= BOSS_DAMAGE_MULTIPLIER;
          this._damageToArmour *= BOSS_DAMAGE_MULTIPLIER;
@@ -540,6 +561,10 @@ package com.brockw.stickwar.engine.units
       {
          var ally:Spearton = null;
          if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossAbilityCooldownFrames > 0 || this.bossBraceDelayFrames > 0 || this.isShieldBashing)
+         {
+            return;
+         }
+         if(team.game.gameScreen is CampaignGameScreen && !CampaignGameScreen(team.game.gameScreen).canUseRebelsUnitedBossAbility(this,"spearton"))
          {
             return;
          }

@@ -6,6 +6,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.*;
    import flash.display.MovieClip;
@@ -15,9 +16,11 @@ package com.brockw.stickwar.engine.units
    public class Ninja extends Unit
    {
       
-      private static const BOSS_RETREAT_HEALTH_RATIO:Number = 0.3;
+      private static const BOSS_RETREAT_HEALTH_RATIO:Number = 0.5;
       
-      private static const BOSS_RETURN_HEALTH_RATIO:Number = 0.5;
+      private static const BOSS_RETURN_HEALTH_RATIO:Number = 1;
+
+      private static const BOSS_LOST_HEALTH_RATIO:Number = 0.05;
       
       private static const BOSS_ARMOR_SKIN:String = "Tribal Ninja";
       
@@ -27,13 +30,15 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 1 / 1.75;
       
-      private static const BOSS_ESCAPE_INVISIBLE_FRAMES:int = 30 * 2;
+      private static const BOSS_ESCAPE_INVISIBLE_FRAMES:int = 30 * 3;
 
       private static const BOSS_WHIFF_PENALTY_FRAMES:int = 30 * 20;
 
-      private static const BOSS_SPECIAL_CLOAK_DURATION_FRAMES:int = 30 * 10;
+      private static const BOSS_SPECIAL_CLOAK_DURATION_FRAMES:int = 30 * 12;
 
-      private static const BOSS_CHAIN_CLOAK_DURATION_FRAMES:int = 30 * 5;
+      private static const BOSS_CHAIN_CLOAK_DURATION_FRAMES:int = 45;
+
+      private static const BOSS_CHAIN_CLOAK_DELAY_FRAMES:int = 15;
       
       private static var WEAPON_REACH:int;
       
@@ -68,6 +73,8 @@ package com.brockw.stickwar.engine.units
       private var _isBoss:Boolean;
       
       private var bossPendingChainCloak:Boolean;
+
+      private var bossPendingChainCloakFrames:int;
       
       private var _bossIsRetreating:Boolean;
       
@@ -84,6 +91,10 @@ package com.brockw.stickwar.engine.units
       private var bossSpecialCloakHit:Boolean;
 
       private var bossCloakWasActive:Boolean;
+
+      private var bossImmediateSpecialReady:Boolean;
+
+      private var bossNeedsSpecialReset:Boolean;
       
       public function Ninja(game:StickWar)
       {
@@ -99,6 +110,7 @@ package com.brockw.stickwar.engine.units
          this._isAutoCloakToggled = false;
          this._isBoss = false;
          this.bossPendingChainCloak = false;
+         this.bossPendingChainCloakFrames = 0;
          this._bossIsRetreating = false;
          this._bossEmergencySortie = false;
          this.bossRetreatCooldownFrames = 0;
@@ -107,6 +119,8 @@ package com.brockw.stickwar.engine.units
          this.bossSpecialCloakActive = false;
          this.bossSpecialCloakHit = false;
          this.bossCloakWasActive = false;
+         this.bossImmediateSpecialReady = false;
+         this.bossNeedsSpecialReset = false;
       }
       
       public static function setItemForMc(mc:MovieClip, weapon:String, armor:String, misc:String) : void
@@ -265,7 +279,17 @@ package com.brockw.stickwar.engine.units
 
       public function bossSpecialStealth(ignoreCooldown:Boolean = false, isChainCloak:Boolean = false) : Boolean
       {
-         return this.activateStealth(true,ignoreCooldown,isChainCloak ? BOSS_CHAIN_CLOAK_DURATION_FRAMES : BOSS_SPECIAL_CLOAK_DURATION_FRAMES);
+         var usedImmediateReady:Boolean = this.bossImmediateSpecialReady;
+         if(!isChainCloak && team.game.gameScreen is CampaignGameScreen && !CampaignGameScreen(team.game.gameScreen).canUseRebelsUnitedBossAbility(this,"shadowrathCloak"))
+         {
+            return false;
+         }
+         var didActivate:Boolean = this.activateStealth(true,ignoreCooldown || usedImmediateReady,isChainCloak ? BOSS_CHAIN_CLOAK_DURATION_FRAMES : BOSS_SPECIAL_CLOAK_DURATION_FRAMES);
+         if(didActivate && usedImmediateReady)
+         {
+            this.bossImmediateSpecialReady = false;
+         }
+         return didActivate;
       }
       
       override protected function checkForHit() : Boolean
@@ -338,6 +362,10 @@ package com.brockw.stickwar.engine.units
          if(this.bossWhiffPenaltyFrames > 0)
          {
             --this.bossWhiffPenaltyFrames;
+         }
+         if(this.bossPendingChainCloakFrames > 0)
+         {
+            --this.bossPendingChainCloakFrames;
          }
          this._stealthSpellTimer.update();
          updateCommon(game);
@@ -417,8 +445,12 @@ package com.brockw.stickwar.engine.units
                   {
                      if(this.isBoss && !this.dontStealth)
                      {
-                        this.bossPendingChainCloak = true;
                         this.markBossSpecialCloakHit();
+                        if(!(this.currentTarget is Statue))
+                        {
+                           this.bossPendingChainCloak = true;
+                           this.bossPendingChainCloakFrames = BOSS_CHAIN_CLOAK_DELAY_FRAMES;
+                        }
                      }
                      this.dontStealth = true;
                      game.soundManager.playSound("sword1",px,py);
@@ -597,7 +629,7 @@ package com.brockw.stickwar.engine.units
          this._isBoss = true;
          this.isBossUnit = true;
          this.hasDefaultLoadout = true;
-         this.bossAbilitySpawnLockFrames = 30 * 2;
+         this.bossAbilitySpawnLockFrames = 30;
          this.isAutoCloakToggled = true;
          this.damageToDeal *= 1.25;
          this.normalVelocity *= 1.12;
@@ -618,13 +650,19 @@ package com.brockw.stickwar.engine.units
          return this._isBoss;
       }
 
+      public function get isAttackAnimationActive() : Boolean
+      {
+         return _state == S_ATTACK;
+      }
+
       public function tryBossChainCloak() : Boolean
       {
-         if(!this.isBoss || this.hasBossAbilitySpawnLock() || !this.bossPendingChainCloak || this._bossIsRetreating || this.hasBossWhiffPenalty())
+         if(!this.isBoss || this.hasBossAbilitySpawnLock() || !this.bossPendingChainCloak || this.bossPendingChainCloakFrames > 0 || _state == S_ATTACK || this._bossIsRetreating || this.hasBossWhiffPenalty())
          {
             return false;
          }
          this.bossPendingChainCloak = false;
+         this.bossPendingChainCloakFrames = 0;
          return this.bossSpecialStealth(true,true);
       }
 
@@ -635,11 +673,11 @@ package com.brockw.stickwar.engine.units
 
       public function shouldBossRetreat() : Boolean
       {
-         if(this.campaignBossEscapeEnabled)
+         if(this.campaignBossEscaping)
          {
             return false;
          }
-         return this.isBoss && !this.hasBossAbilitySpawnLock() && !this._bossIsRetreating && !this._bossEmergencySortie && this.bossRetreatCooldownFrames == 0 && this.health <= this.maxHealth * BOSS_RETREAT_HEALTH_RATIO;
+         return this.isBoss && !this.hasBossAbilitySpawnLock() && !this._bossIsRetreating && !this._bossEmergencySortie && this.health <= this.maxHealth * BOSS_RETREAT_HEALTH_RATIO && this.health > this.maxHealth * BOSS_LOST_HEALTH_RATIO;
       }
 
       public function startBossRetreat() : void
@@ -647,15 +685,13 @@ package com.brockw.stickwar.engine.units
          this._bossIsRetreating = true;
          this._bossEmergencySortie = false;
          this.bossRetreatCooldownFrames = 30 * 15;
-         this.bossEscapeInvisibleFrames = BOSS_ESCAPE_INVISIBLE_FRAMES;
-         this.dontStealth = false;
-         this.team.game.projectileManager.initStealthWallExplosion(this.px,this.py,this.team);
-         this.team.game.soundManager.playSound("mediumExplosion3",this.px,this.py);
+         this.bossImmediateSpecialReady = false;
+         this.triggerBossEscapeCloak();
       }
 
       public function updateBossRetreatState() : void
       {
-         if(this._bossIsRetreating && this.health >= this.maxHealth * BOSS_RETURN_HEALTH_RATIO)
+         if(this._bossIsRetreating && !this._bossEmergencySortie && this.health >= this.maxHealth * BOSS_RETURN_HEALTH_RATIO)
          {
             this._bossIsRetreating = false;
          }
@@ -668,10 +704,7 @@ package com.brockw.stickwar.engine.units
 
       public function startBossEmergencySortie() : void
       {
-         this._bossIsRetreating = false;
-         this._bossEmergencySortie = true;
-         this.bossEscapeInvisibleFrames = 0;
-         this.dontStealth = true;
+         this.enterBossFinalStand();
       }
 
       public function beginBossRecovery() : void
@@ -691,6 +724,80 @@ package com.brockw.stickwar.engine.units
          return BOSS_RETURN_HEALTH_RATIO;
       }
 
+      public function shouldStartBossLostPhase() : Boolean
+      {
+         return this.campaignBossEscapeEnabled && !this.campaignBossEscaping && this.health <= this.maxHealth * BOSS_LOST_HEALTH_RATIO;
+      }
+
+      public function get bossIsCautious() : Boolean
+      {
+         return this._bossIsRetreating;
+      }
+
+      public function get bossInFinalStand() : Boolean
+      {
+         return this._bossEmergencySortie;
+      }
+
+      public function finishBossCautious() : void
+      {
+         this._bossIsRetreating = false;
+      }
+
+      public function enterBossFinalStand() : void
+      {
+         if(this._bossEmergencySortie || this.campaignBossEscaping)
+         {
+            return;
+         }
+         this._bossEmergencySortie = true;
+         this._bossIsRetreating = false;
+         this.bossRetreatCooldownFrames = 0;
+         this.bossWhiffPenaltyFrames = 0;
+         this.bossPendingChainCloak = false;
+         this.bossPendingChainCloakFrames = 0;
+         this.bossNeedsSpecialReset = false;
+         this.bossSpecialCloakActive = false;
+         this.bossSpecialCloakHit = false;
+         this.bossEscapeInvisibleFrames = 0;
+         this.bossImmediateSpecialReady = true;
+         this.dontStealth = true;
+      }
+
+      public function triggerBossEscapeCloak() : void
+      {
+         this.bossPendingChainCloak = false;
+         this.bossPendingChainCloakFrames = 0;
+         this.bossNeedsSpecialReset = false;
+         this.bossSpecialCloakActive = false;
+         this.bossSpecialCloakHit = false;
+         this.bossEscapeInvisibleFrames = BOSS_ESCAPE_INVISIBLE_FRAMES;
+         this.dontStealth = false;
+         this.team.game.projectileManager.initStealthWallExplosion(this.px,this.py,this.team);
+         this.team.game.soundManager.playSound("mediumExplosion3",this.px,this.py);
+      }
+
+      public function failBossSpecial() : void
+      {
+         this.bossPendingChainCloak = false;
+         this.bossPendingChainCloakFrames = 0;
+         this.bossSpecialCloakActive = false;
+         this.bossSpecialCloakHit = false;
+         this.bossWhiffPenaltyFrames = BOSS_WHIFF_PENALTY_FRAMES;
+         this.bossNeedsSpecialReset = true;
+         this.dontStealth = true;
+      }
+
+      public function get needsBossSpecialReset() : Boolean
+      {
+         return this.bossNeedsSpecialReset;
+      }
+
+      public function finishBossSpecialReset() : void
+      {
+         this.bossNeedsSpecialReset = false;
+      }
+
       public function hasBossWhiffPenalty() : Boolean
       {
          return this.bossWhiffPenaltyFrames > 0;
@@ -705,6 +812,7 @@ package com.brockw.stickwar.engine.units
       {
          this.bossSpecialCloakHit = true;
          this.bossSpecialCloakActive = false;
+         this._stealthSpellTimer.endEffect();
       }
 
       private function updateBossCloakPenaltyState() : void
@@ -714,6 +822,8 @@ package com.brockw.stickwar.engine.units
          {
             this.bossWhiffPenaltyFrames = BOSS_WHIFF_PENALTY_FRAMES;
             this.bossPendingChainCloak = false;
+            this.bossPendingChainCloakFrames = 0;
+            this.bossNeedsSpecialReset = true;
          }
          if(!stealthActive)
          {

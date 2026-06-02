@@ -55,8 +55,13 @@ package com.brockw.stickwar.engine.Ai
          }
          else if(currentCommand.type == UnitCommand.POISON_POOL)
          {
+            unit.forceFaceDirection(currentCommand.realX - unit.px);
             Medusa(unit).poisonSpray();
             nextMove(game);
+         }
+         else if(Medusa(unit).updateBossDistantRetreat(game))
+         {
+            return;
          }
          else
          {

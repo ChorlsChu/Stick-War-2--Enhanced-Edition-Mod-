@@ -63,13 +63,14 @@ package com.brockw.stickwar.singleplayer
       {
          var key:int = 0;
          var levelTitle:String = String(main.campaign.getCurrentLevel().title);
+         var isLateMedusaLevel:Boolean = main.campaign.getCurrentLevel().controller == CampaignCutScene2 || int(main.campaign.getCurrentLevel().levelXml.attribute("number")) == 13;
          this.fistAttackSpell = new FistAttackCommand(game);
          this.reaperSpell = new ReaperCommand(game);
          this.poisonPoolSpell = new PoisonPoolCommand(game);
          this.stoneSpell = new StoneCommand(game);
          this.nextTowerBuildFrame = 0;
          this.pendingTowerBuildUntil = 0;
-         this.allowTrainableMedusa = main.campaign.getCurrentLevel().controller == CampaignCutScene2 || int(main.campaign.getCurrentLevel().levelXml.attribute("number")) == 13;
+         this.allowTrainableMedusa = isLateMedusaLevel && main.campaign.difficultyLevel != Campaign.D_NORMAL;
          if(this.allowTrainableMedusa && team.unitsAvailable != null)
          {
             team.unitsAvailable[Unit.U_MEDUSA] = 1;
@@ -118,6 +119,10 @@ package com.brockw.stickwar.singleplayer
          if(this.allowTrainableMedusa)
          {
             unitComposition[Unit.U_MEDUSA] = NORMAL_MEDUSA_LIMIT;
+         }
+         else if(isLateMedusaLevel)
+         {
+            unitComposition[Unit.U_MEDUSA] = 0;
          }
          unitComposition[Unit.U_GIANT] = main.campaign.xml.Chaos.UnitComposition.Giant;
          if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Giant) != "")
@@ -292,6 +297,10 @@ package com.brockw.stickwar.singleplayer
       {
          var knight:Knight = null;
          var target:Unit = null;
+         if(Knight.AUTO_CHARGE_LOCKED)
+         {
+            return;
+         }
          for each(knight in team.unitGroups[Unit.U_KNIGHT])
          {
             if(!team.tech.isResearched(Tech.KNIGHT_CHARGE) || knight.getChargeCooldown() != 0 || knight.isBusy() || knight.isGarrisoned)
@@ -357,6 +366,8 @@ package com.brockw.stickwar.singleplayer
       
       private function updateMedusa(game:StickWar) : void
       {
+         var campaignScreen:CampaignGameScreen = null;
+         var medusaController:CampaignCutScene2 = null;
          var medusa:Medusa = null;
          var target:Unit = null;
          var stoneTarget:Unit = null;
@@ -365,59 +376,52 @@ package com.brockw.stickwar.singleplayer
          var desperation:Boolean = false;
          var supportStonePhase:Boolean = false;
          var poisonClusterCount:int = 0;
+         var shouldDistantRetreat:Boolean = false;
+         if(game.gameScreen is CampaignGameScreen && CampaignGameScreen(game.gameScreen).campaignController is CampaignCutScene2)
+         {
+            campaignScreen = CampaignGameScreen(game.gameScreen);
+            medusaController = CampaignCutScene2(campaignScreen.campaignController);
+         }
          for each(medusa in team.unitGroups[Unit.U_MEDUSA])
          {
             if(this.isBossMedusa(medusa))
             {
+               if(medusaController != null && medusaController.isMedusaRevealStoneLocked())
+               {
+                  continue;
+               }
                target = medusa.ai.getClosestTarget();
                escortCount = this.getNearbyMedusaEscortCount(medusa);
-               desperation = medusa.health / medusa.maxHealth <= MEDUSA_LOW_PHASE_HP_THRESHOLD && escortCount == 0;
-               supportStonePhase = escortCount > 0 && medusa.health / medusa.maxHealth <= MEDUSA_MID_PHASE_HP_THRESHOLD;
+               shouldDistantRetreat = medusaController != null && medusaController.shouldMedusaDistantRetreat();
                if(target != null && escortCount > 0 && medusa.isBossFallbackActive())
                {
                   medusa.walk(-team.direction,0,-team.direction);
                   continue;
                }
-               stoneTarget = this.getBestMedusaStoneTarget(medusa,game);
-               poisonTarget = this.getBestMedusaPoisonTarget(medusa,game,desperation);
-               poisonClusterCount = poisonTarget == null ? 0 : this.getEnemyClusterCount(poisonTarget,MEDUSA_POISON_CLUSTER_RANGE);
-               if(supportStonePhase && medusa.stoneCooldown() == 0 && stoneTarget != null)
+               if(shouldDistantRetreat && target != null)
                {
-                  this.stoneSpell.realX = stoneTarget.px;
-                  this.stoneSpell.realY = stoneTarget.py;
-                  this.stoneSpell.targetId = stoneTarget.id;
-                  if(this.stoneSpell.inRange(medusa))
-                  {
-                     medusa.stone(stoneTarget);
-                  }
+                  medusa.requestBossDistantRetreat();
+                  continue;
                }
-               else if(medusa.poisonPoolCooldown() == 0 && poisonTarget != null && (desperation || poisonClusterCount >= MEDUSA_POISON_PRIORITY_CLUSTER_COUNT))
+               if(Boolean(target))
                {
-                  this.poisonPoolSpell.realX = poisonTarget.px;
-                  this.poisonPoolSpell.realY = poisonTarget.py;
-                  if(this.poisonPoolSpell.inRange(medusa))
+                  if(medusa.stoneCooldown() == 0)
                   {
-                     medusa.poisonSpray();
-                  }
-               }
-               else
-               {
-                  if(medusa.stoneCooldown() == 0 && stoneTarget != null)
-                  {
-                     this.stoneSpell.realX = stoneTarget.px;
-                     this.stoneSpell.realY = stoneTarget.py;
-                     this.stoneSpell.targetId = stoneTarget.id;
+                     this.stoneSpell.realX = target.px;
+                     this.stoneSpell.realY = target.py;
+                     this.stoneSpell.targetId = target.id;
                      if(this.stoneSpell.inRange(medusa))
                      {
-                        medusa.stone(stoneTarget);
+                        medusa.stone(target);
                      }
                   }
-                  else if(medusa.poisonPoolCooldown() == 0 && poisonTarget != null)
+                  else if(medusa.poisonPoolCooldown() == 0)
                   {
-                     this.poisonPoolSpell.realX = poisonTarget.px;
-                     this.poisonPoolSpell.realY = poisonTarget.py;
+                     this.poisonPoolSpell.realX = target.px;
+                     this.poisonPoolSpell.realY = target.py;
                      if(this.poisonPoolSpell.inRange(medusa))
                      {
+                        medusa.forceFaceDirection(target.px - medusa.px);
                         medusa.poisonSpray();
                      }
                   }
@@ -444,6 +448,7 @@ package com.brockw.stickwar.singleplayer
                      this.poisonPoolSpell.realY = target.py;
                      if(this.poisonPoolSpell.inRange(medusa))
                      {
+                        medusa.forceFaceDirection(target.px - medusa.px);
                         medusa.poisonSpray();
                      }
                   }

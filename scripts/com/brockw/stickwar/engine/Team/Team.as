@@ -667,6 +667,48 @@ package com.brockw.stickwar.engine.Team
          }
          this._unitProductionQueue[this.unitInfo[unit.type][2]].push([unit,0]);
       }
+
+      private function getEffectiveCreateTime(unit:Unit) : Number
+      {
+         if(unit == null)
+         {
+            return 0;
+         }
+         if(this.hasActiveCommanderTrainingAura(unit.type))
+         {
+            return unit.createTime * 0.7;
+         }
+         return unit.createTime;
+      }
+
+      private function hasActiveCommanderTrainingAura(unitType:int) : Boolean
+      {
+         var unit:Unit = null;
+         if(unitType != Unit.U_SPEARTON && unitType != Unit.U_KNIGHT)
+         {
+            return false;
+         }
+         if(!Boolean(this.unitGroups[unitType]))
+         {
+            return false;
+         }
+         for each(unit in this.unitGroups[unitType])
+         {
+            if(unit == null || !unit.isAlive() || unit.isGarrisoned || unit.campaignBossEscaping)
+            {
+               continue;
+            }
+            if(unitType == Unit.U_SPEARTON && unit is Spearton && Spearton(unit).isBoss)
+            {
+               return true;
+            }
+            if(unitType == Unit.U_KNIGHT && unit is Knight && Knight(unit).isBoss)
+            {
+               return true;
+            }
+         }
+         return false;
+      }
       
       public function dequeueUnit(type:int, backwards:Boolean) : Unit
       {
@@ -801,7 +843,7 @@ package com.brockw.stickwar.engine.Team
                k = int(this.unitInfo[key][2]);
                if(this._unitProductionQueue[k].length != 0 && Unit(this._unitProductionQueue[k][0][0]).type == int(key))
                {
-                  this.drawTimerOverlay(this.buttonInfoMap[key][6],overlay,this._unitProductionQueue[k][0][1] / Unit(this._unitProductionQueue[k][0][0]).createTime);
+                  this.drawTimerOverlay(this.buttonInfoMap[key][6],overlay,this._unitProductionQueue[k][0][1] / this.getEffectiveCreateTime(Unit(this._unitProductionQueue[k][0][0])));
                }
                else
                {
@@ -1226,6 +1268,7 @@ package com.brockw.stickwar.engine.Team
          var controllingTeam:Team = null;
          var currentUnit:Unit = null;
          var garrisonMove:UnitMove = null;
+         var deadUnitIndex:int = 0;
          if(game.map.hills.length != 0)
          {
             controllingTeam = game.map.hills[0].getControllingTeam(game);
@@ -1281,7 +1324,7 @@ package com.brockw.stickwar.engine.Team
          {
             if(queue.length != 0)
             {
-               if(queue[0][1] > Unit(queue[0][0]).createTime || isDebug)
+               if(queue[0][1] > this.getEffectiveCreateTime(Unit(queue[0][0])) || isDebug)
                {
                   this.spawn(Unit(queue[0][0]),game);
                   this.dequeueUnit(Unit(queue[0][0]).type,false);
@@ -1327,10 +1370,11 @@ package com.brockw.stickwar.engine.Team
          {
             this._deadUnits[unit].update(game);
          }
-         if(this._deadUnits.length > 0 && Unit(this._deadUnits[0]).timeOfDeath > 30 * 20)
+         deadUnitIndex = this.getExpiredDeadUnitIndex();
+         if(deadUnitIndex != -1)
          {
-            this.removeUnitCompletely(this._deadUnits[0],game);
-            this._deadUnits[0] = this._deadUnits[this._deadUnits.length - 1];
+            this.removeUnitCompletely(this._deadUnits[deadUnitIndex],game);
+            this._deadUnits[deadUnitIndex] = this._deadUnits[this._deadUnits.length - 1];
             this._deadUnits.length -= 1;
          }
          for(unit in this.garrisonedUnits)
@@ -1349,6 +1393,30 @@ package com.brockw.stickwar.engine.Team
          {
             garrisonMove.execute(game);
          }
+      }
+
+      private function getExpiredDeadUnitIndex() : int
+      {
+         var i:int = 0;
+         var unit:Unit = null;
+         for(i = 0; i < this._deadUnits.length; i++)
+         {
+            unit = Unit(this._deadUnits[i]);
+            if(unit.timeOfDeath > this.getDeadUnitCleanupFrames(unit))
+            {
+               return i;
+            }
+         }
+         return -1;
+      }
+
+      private function getDeadUnitCleanupFrames(unit:Unit) : int
+      {
+         if(unit != null && unit.isBossUnit && unit.type == Unit.U_MAGIKILL)
+         {
+            return 30 * 60;
+         }
+         return 30 * 20;
       }
       
       public function drawTimerOverlay(mc:MovieClip, overlay:MovieClip, fraction:Number) : void

@@ -99,6 +99,10 @@ package com.brockw.stickwar.engine.units
             {
                return;
             }
+            if(campaignScreen.shouldBlockEnemyStatueDamageWithMagikillWard(inflictor))
+            {
+               return;
+            }
          }
          if(isTargetable())
          {

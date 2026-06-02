@@ -43,6 +43,8 @@ package com.brockw.stickwar.engine.Ai
       private var cachedTarget:Unit;
       
       private var lastCacheFrame:int;
+
+      private var reaperControlLastDirectHitFrame:int;
       
       public function UnitAi()
       {
@@ -51,6 +53,7 @@ package com.brockw.stickwar.engine.Ai
          this.commandQueue = new Queue(1000);
          this.isNonAttackingMage = false;
          this.lastCacheFrame = 0;
+         this.reaperControlLastDirectHitFrame = 0;
          this.init();
          this.intendedX = 1;
       }
@@ -162,6 +165,11 @@ package com.brockw.stickwar.engine.Ai
          var yMovement:Number = NaN;
          var offset:Number = NaN;
          this.checkNextMove(game);
+         if(this.unit.isConfused())
+         {
+            this.updateReaperControl(game);
+            return;
+         }
          var target:Unit = this.getClosestTarget();
          if(this.mayAttack && (this.unit.mayAttack(target) || target is Wall && Math.abs(target.px - this.unit.px) < target.pwidth + this.unit.pwidth / 2))
          {
@@ -471,12 +479,23 @@ package com.brockw.stickwar.engine.Ai
          var rIndex:* = undefined;
          var u:Unit = null;
          var d:Number = NaN;
+         var confusedTarget:Unit = null;
+         if(this.unit.isConfused())
+         {
+            confusedTarget = this.getClosestConfusedAllyTarget();
+            if(confusedTarget != null)
+            {
+               this.currentTarget = confusedTarget;
+               this.isTargeted = true;
+               return confusedTarget;
+            }
+         }
          if(this.unit.team.enemyTeam.units.length == 0)
          {
             return this.unit.team.enemyTeam.statue;
          }
          var minDistance:Number = Number.POSITIVE_INFINITY;
-         if(this.currentTarget != null && (!this.currentTarget.isAlive() || !Unit(this.currentTarget).isTargetable()))
+         if(this.currentTarget != null && (!this.currentTarget.isAlive() || !Unit(this.currentTarget).isTargetable() || this.currentTarget.isConfused()))
          {
             minDistance = Number.POSITIVE_INFINITY;
             this.currentTarget = null;
@@ -494,7 +513,7 @@ package com.brockw.stickwar.engine.Ai
          {
             rIndex = this.unit.team.game.random.nextInt() % this.unit.team.enemyTeam.units.length;
             u = this.unit.team.enemyTeam.units[rIndex];
-            if(!(u.pz != 0 && !this.unit.canAttackAir()))
+            if(!(u.pz != 0 && !this.unit.canAttackAir()) && !u.isConfused())
             {
                d = this.unit.sqrDistanceToTarget(u);
                if(d * 1.3 < minDistance && Unit(this.unit.team.enemyTeam.units[rIndex]).isTargetable())
@@ -510,6 +529,122 @@ package com.brockw.stickwar.engine.Ai
          }
          return this.currentTarget;
       }
+
+      private function updateReaperControl(game:StickWar) : void
+      {
+         var target:Unit = null;
+         var yMovement:Number = 0;
+         this.unit.isBossMovementLocked = true;
+         if(this.unit.isReaperControlFallingBack())
+         {
+            this.unit.ungarrison();
+            this.unit.mayWalkThrough = true;
+            this.goalX = this.unit.team.homeX;
+            this.goalY = game.map.height / 2;
+            this.intendedX = Util.sgn(this.goalX - this.unit.px);
+            if(this.intendedX == 0)
+            {
+               this.intendedX = -this.unit.team.direction;
+            }
+            this.unit.walk((this.goalX - this.unit.px) / 80,(this.goalY - this.unit.py) / 140,this.intendedX);
+            this.unit.faceDirection(this.intendedX);
+            return;
+         }
+         target = this.getClosestConfusedAllyTarget();
+         if(target == null)
+         {
+            this.currentTarget = null;
+            this.isTargeted = false;
+            this.unit.ungarrison();
+            this.unit.mayWalkThrough = true;
+            this.intendedX = this.unit.team.direction;
+            this.unit.walk(this.unit.team.direction,0,this.unit.team.direction);
+            this.unit.faceDirection(this.unit.team.direction);
+            return;
+         }
+         this.currentTarget = target;
+         this.isTargeted = true;
+         this.unit.ungarrison();
+         this.mayAttack = true;
+         this.mayMoveToAttack = true;
+         this.mayMove = true;
+         this.unit.mayWalkThrough = true;
+         this.goalX = target.px;
+         this.goalY = target.py;
+         this.intendedX = Util.sgn(target.px - this.unit.px);
+         if(this.intendedX == 0)
+         {
+            this.intendedX = this.unit.getDirection();
+            if(this.intendedX == 0)
+            {
+               this.intendedX = this.unit.team.direction;
+            }
+         }
+         this.unit.faceDirection(target.px - this.unit.px);
+         if(this.unit.mayAttack(target))
+         {
+            this.unit.attack();
+            this.tryReaperControlDirectHit(game,target);
+            return;
+         }
+         if(target.type != Unit.U_WALL && Math.abs(this.unit.px - target.px) < 200)
+         {
+            yMovement = target.py - this.unit.py;
+         }
+         this.unit.walk((target.px - this.unit.px) / 80,yMovement / 120,this.intendedX);
+      }
+
+      private function tryReaperControlDirectHit(game:StickWar, target:Unit) : void
+      {
+         if(!(this.unit is RangedUnit))
+         {
+            return;
+         }
+         if(game.frame - this.reaperControlLastDirectHitFrame < 30)
+         {
+            return;
+         }
+         if(target == null || !target.isAlive() || target.team != this.unit.team)
+         {
+            return;
+         }
+         if(target.isFlying() && !this.unit.canAttackAir())
+         {
+            return;
+         }
+         this.reaperControlLastDirectHitFrame = game.frame;
+         target.damage(0,this.unit.getDamageToUnit(target),this.unit);
+      }
+
+      protected function getClosestConfusedAllyTarget() : Unit
+      {
+         var ally:Unit = null;
+         var best:Unit = null;
+         var d:Number = NaN;
+         var minDistance:Number = 250000;
+         if(this.unit.team == null || this.unit.team.units == null)
+         {
+            return null;
+         }
+         if(this.currentTarget != null && this.currentTarget.team == this.unit.team && this.currentTarget != this.unit && this.currentTarget.isAlive() && this.currentTarget.isTargetable() && !this.currentTarget.isGarrisoned && !this.currentTarget.isBossUnit && this.currentTarget.type != Unit.U_STATUE && (!this.currentTarget.isFlying() || this.unit.canAttackAir()))
+         {
+            return this.currentTarget;
+         }
+         for each(ally in this.unit.team.units)
+         {
+            if(ally == null || ally == this.unit || !ally.isAlive() || !ally.isTargetable() || ally.isGarrisoned || ally.isBossUnit || ally.type == Unit.U_STATUE || (ally.isFlying() && !this.unit.canAttackAir()))
+            {
+               continue;
+            }
+            d = this.unit.sqrDistanceToTarget(ally);
+            if(d < minDistance)
+            {
+               minDistance = d;
+               best = ally;
+            }
+         }
+         return best;
+      }
       
       public function getClosestTarget() : Unit
       {
@@ -519,6 +654,12 @@ package com.brockw.stickwar.engine.Ai
             return this.cachedTarget;
          }
          var u:Unit = this.getClosestUnitTarget();
+         if(this.unit.isConfused())
+         {
+            this.currentTarget = this.cachedTarget = u;
+            this.lastCacheFrame = this.unit.team.game.frame;
+            return u;
+         }
          for each(w in this.unit.team.enemyTeam.walls)
          {
             if(this.unit.px < w.px && w.px < u.px)
@@ -549,6 +690,15 @@ package com.brockw.stickwar.engine.Ai
       {
          this.currentCommand = null;
          this.currentTarget = null;
+      }
+
+      public function clearReaperControlTarget() : void
+      {
+         this.currentTarget = null;
+         this.cachedTarget = null;
+         this.lastCacheFrame = -1;
+         this.isTargeted = false;
+         this.unit.mayWalkThrough = false;
       }
       
       public function get currentTarget() : Unit

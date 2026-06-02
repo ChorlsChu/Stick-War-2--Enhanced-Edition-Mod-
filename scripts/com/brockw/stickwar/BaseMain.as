@@ -71,7 +71,6 @@ package com.brockw.stickwar
          super();
          this._loadingBar = null;
          this.isCampaignDebug = false;
-         trace("BASE MAIN STUFF");
          this.soundManager = new SoundManager(this);
          this.soundLoader = new SoundLoader(this.soundManager);
          this.isKongregate = false;

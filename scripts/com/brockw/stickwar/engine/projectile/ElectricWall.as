@@ -9,6 +9,8 @@ package com.brockw.stickwar.engine.projectile
    {
       
       internal var spellMc:MovieClip;
+
+      public var controlledFriendlyFire:Boolean;
       
       private var wallArea:Number;
       
@@ -27,6 +29,7 @@ package com.brockw.stickwar.engine.projectile
          type = ELECTRIC_WALL;
          this.spellMc = new electricWallMc();
          this.addChild(this.spellMc);
+         this.controlledFriendlyFire = false;
          for(var i:* = 0; i < this.spellMc.numChildren; i++)
          {
             mc = this.spellMc.getChildAt(i);
@@ -78,7 +81,7 @@ package com.brockw.stickwar.engine.projectile
       
       private function hitElectricWall(unit:Unit) : void
       {
-         if(unit.team != this.team)
+         if(!this.controlledFriendlyFire && unit.team != this.team || this.controlledFriendlyFire && unit.team == this.team && unit != this.inflictor && !unit.isBossUnit && unit.type != Unit.U_STATUE)
          {
             if(Math.abs(unit.px - this.px) < this.wallArea)
             {

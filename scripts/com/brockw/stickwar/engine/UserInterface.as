@@ -379,6 +379,30 @@ package com.brockw.stickwar.engine
             this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
          }
       }
+
+      private function performGlobalMove(globalMoveType:int) : void
+      {
+         var m:GlobalMove = null;
+         if(!this.isGlobalsEnabled)
+         {
+            return;
+         }
+         m = new GlobalMove();
+         m.globalMoveType = globalMoveType;
+         this.gameScreen.doMove(m,this.team.id);
+         if(globalMoveType == Team.G_GARRISON)
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume(this.team.type == Team.T_GOOD ? "manthefortSoundOrder" : "manthefortSoundChaos");
+         }
+         else if(globalMoveType == Team.G_DEFEND)
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume(this.team.type == Team.T_GOOD ? "defendSoundOrder" : "defendSoundChaos");
+         }
+         else if(globalMoveType == Team.G_ATTACK)
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume(this.team.type == Team.T_GOOD ? "attackSoundOrder" : "attackSoundChaos");
+         }
+      }
       
       private function tryToSelectABuilding() : void
       {
@@ -602,6 +626,18 @@ package com.brockw.stickwar.engine
          {
             return;
          }
+         if(this.keyBoardState.isPressed(86))
+         {
+            this.performGlobalMove(Team.G_GARRISON);
+         }
+         if(this.keyBoardState.isPressed(66))
+         {
+            this.performGlobalMove(Team.G_DEFEND);
+         }
+         if(this.keyBoardState.isPressed(78))
+         {
+            this.performGlobalMove(Team.G_ATTACK);
+         }
          if(this.keyBoardState.isPressed(9))
          {
             this.selectedUnits.nextSelectedUnitType();
@@ -611,7 +647,7 @@ package com.brockw.stickwar.engine
             this.selectedUnits.clear();
             for each(u in this.team.units)
             {
-               if(!u.isTowerSpawned && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER)
+               if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER)
                {
                   this.selectedUnits.add(u);
                   u.selected = true;
@@ -756,7 +792,7 @@ package com.brockw.stickwar.engine
                   }
                }
                candidate = this.gameScreen.game.mouseOverUnit;
-               if(candidate != null && candidate is Unit && Unit(candidate).team == this.team && !(candidate is Statue))
+               if(candidate != null && candidate is Unit && Unit(candidate).team == this.team && !Unit(candidate).isConfused() && !(candidate is Statue))
                {
                   if(this.keyBoardState.isShift)
                   {
@@ -776,7 +812,7 @@ package com.brockw.stickwar.engine
                   this.selectedUnits.clear();
                }
                type = -1;
-               if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team)
+               if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team && !Unit(this.gameScreen.game.mouseOverUnit).isConfused())
                {
                   type = this.gameScreen.game.mouseOverUnit.type;
                }
@@ -784,7 +820,7 @@ package com.brockw.stickwar.engine
                {
                   x = this.team.units[unit].x - this.gameScreen.game.screenX;
                   y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
-                  if(Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift)
+                  if(!Unit(this.team.units[unit]).isConfused() && (Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift))
                   {
                      Unit(this.team.units[unit]).selected = true;
                   }
@@ -812,11 +848,11 @@ package com.brockw.stickwar.engine
                      y = int(this.team.units[unit].y);
                      if(this.keyBoardState.isShift)
                      {
-                        Unit(this.team.units[unit]).selected = this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || Unit(this.team.units[unit]).selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit];
+                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || Unit(this.team.units[unit]).selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
                      }
                      else
                      {
-                        Unit(this.team.units[unit]).selected = this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit];
+                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
                      }
                      if(Unit(this.team.units[unit]).selected)
                      {
@@ -879,7 +915,7 @@ package com.brockw.stickwar.engine
 
       private function isSelectablePoisonedUnit(poisoned:Unit) : Boolean
       {
-         return poisoned != null && !poisoned.isDead && poisoned.isPoisoned() && poisoned.team == this.team && !poisoned.isGarrisoned && poisoned.ai != null && poisoned.ai.currentCommand != null && poisoned.ai.currentCommand.type != UnitCommand.GARRISON;
+         return poisoned != null && !poisoned.isDead && !poisoned.isConfused() && poisoned.isPoisoned() && poisoned.team == this.team && !poisoned.isGarrisoned && poisoned.ai != null && poisoned.ai.currentCommand != null && poisoned.ai.currentCommand.type != UnitCommand.GARRISON;
       }
 
       private function tryUngarrisonSelectedUnits() : void
@@ -931,7 +967,7 @@ package com.brockw.stickwar.engine
          for(key in this.team.garrisonedUnits)
          {
             unit = this.team.garrisonedUnits[key];
-            if(unit != null && !unit.isDead && unit.team == this.team && unit.isGarrisoned)
+            if(unit != null && !unit.isDead && !unit.isConfused() && unit.team == this.team && unit.isGarrisoned)
             {
                this.selectedUnits.add(unit);
                unit.selected = true;
@@ -941,7 +977,7 @@ package com.brockw.stickwar.engine
 
       private function isSelectableFullHealthGarrisonedUnit(unit:Unit) : Boolean
       {
-         return unit != null && !unit.isDead && unit.team == this.team && unit.isGarrisoned && unit.health >= unit.maxHealth;
+         return unit != null && !unit.isDead && !unit.isConfused() && unit.team == this.team && unit.isGarrisoned && unit.health >= unit.maxHealth;
       }
       
       public function mouseUpEvent(evt:Event) : void

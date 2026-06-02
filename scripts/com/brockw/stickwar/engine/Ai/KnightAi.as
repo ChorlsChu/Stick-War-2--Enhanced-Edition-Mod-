@@ -15,7 +15,16 @@ package com.brockw.stickwar.engine.Ai
       
       override public function update(game:StickWar) : void
       {
-         if(currentCommand.type == UnitCommand.KNIGHT_CHARGE)
+         if(unit.shouldStartCampaignBossEscape())
+         {
+            unit.startCampaignBossEscape();
+         }
+         if(unit.updateCampaignBossEscape(game))
+         {
+            return;
+         }
+         Knight(unit).tryBossCharge();
+         if(currentCommand != null && currentCommand.type == UnitCommand.KNIGHT_CHARGE)
          {
             Knight(unit).charge();
             nextMove(game);

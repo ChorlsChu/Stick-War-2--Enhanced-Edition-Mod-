@@ -84,6 +84,8 @@ package com.brockw.stickwar.engine.multiplayer
       private var wasWin:Boolean;
       
       private var lastAddImage:MovieClip;
+
+      private var wasCampaignReplay:Boolean;
       
       public function PostGameScreen(main:BaseMain)
       {
@@ -129,7 +131,7 @@ package com.brockw.stickwar.engine.multiplayer
       {
          var unit:Unit = game.unitFactory.getUnit(u);
          var item:XMLList = game.team.buttonInfoMap[u][2];
-         this.unitUnlocked.push([item.name,item.info,game.unitFactory.getProfile(u)]);
+         this.unitUnlocked.push([item.child("name").toString(),item.child("info").toString(),game.unitFactory.getProfile(u)]);
          game.unitFactory.returnUnit(unit.type,unit);
       }
       
@@ -174,6 +176,7 @@ package com.brockw.stickwar.engine.multiplayer
       public function setMode(m:int, isReplay:Boolean = false) : void
       {
          this.mode = m;
+         this.wasCampaignReplay = isReplay;
          this.mc.userAButton.buttonMode = false;
          this.mc.userBButton.buttonMode = false;
          this.mc.userAButton.mouseEnabled = false;
@@ -361,6 +364,12 @@ package com.brockw.stickwar.engine.multiplayer
          }
          else if(this.mode == PostGameScreen.M_CAMPAIGN)
          {
+            if(this.wasCampaignReplay)
+            {
+               this.main.soundManager.playSoundFullVolume("clickButton");
+               this.main.showScreen("campaignMap",false,true);
+               return;
+            }
             if(this.main.campaign.isGameFinished())
             {
                this.main.showScreen("summary",false,true);

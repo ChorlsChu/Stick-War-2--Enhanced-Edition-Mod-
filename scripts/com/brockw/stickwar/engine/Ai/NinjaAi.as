@@ -3,6 +3,7 @@ package com.brockw.stickwar.engine.Ai
    import com.brockw.game.Util;
    import com.brockw.stickwar.engine.Ai.command.AttackMoveCommand;
    import com.brockw.stickwar.engine.Ai.command.MoveCommand;
+   import com.brockw.stickwar.engine.Ai.command.StandCommand;
    import com.brockw.stickwar.engine.Ai.command.UnitCommand;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Team;
@@ -11,15 +12,30 @@ package com.brockw.stickwar.engine.Ai
    import com.brockw.stickwar.engine.units.Magikill;
    import com.brockw.stickwar.engine.units.Monk;
    import com.brockw.stickwar.engine.units.Ninja;
+   import com.brockw.stickwar.engine.units.Statue;
    import com.brockw.stickwar.engine.units.Unit;
    
    public class NinjaAi extends UnitAi
    {
       private static const BOSS_TARGET_LOCK_FRAMES:int = 30;
 
+      private static const BOSS_SPECIAL_ABORT_FRAMES:int = 30 * 3;
+
+      private static const BOSS_OPENER_TRIGGER_RANGE:Number = 500;
+
+      private static const BOSS_HEALER_ANCHOR_X:Number = 90;
+
+      private static const BOSS_HEALER_ANCHOR_Y:Number = 60;
+
+      private static const BOSS_ASSASSIN_STRIKE_OFFSET:Number = 20;
+
+      private static const BOSS_SPECIAL_RESET_DISTANCE:Number = 260;
+
       private static const BOSS_SQUAD_RADIUS_X:Number = 260;
 
       private static const BOSS_SQUAD_RADIUS_Y:Number = 120;
+
+      private static const BOSS_GARRISON_STUCK_FRAMES:int = 30;
 
       private var bossFocusTargetId:int;
 
@@ -36,6 +52,24 @@ package com.brockw.stickwar.engine.Ai
       private var cachedNearbyBossLeader:Ninja;
 
       private var cachedNearbyBossLeaderFrame:int;
+
+      private var bossAssignedHealerId:int;
+
+      private var bossAssignedHealerHealth:Number;
+
+      private var bossNeedsHealerRefresh:Boolean;
+
+      private var bossSpecialAbortFrames:int;
+
+      private var lastFriendlyStatueHealth:Number;
+
+      private var bossGarrisonMoveIssued:Boolean;
+
+      private var bossGarrisonLastPx:Number;
+
+      private var bossGarrisonLastPy:Number;
+
+      private var bossGarrisonStuckFrames:int;
       
       public function NinjaAi(s:Ninja)
       {
@@ -49,10 +83,20 @@ package com.brockw.stickwar.engine.Ai
          this.cachedNearbyAttackerCountFrame = -1;
          this.cachedNearbyBossLeader = null;
          this.cachedNearbyBossLeaderFrame = -1;
+         this.bossAssignedHealerId = -1;
+         this.bossAssignedHealerHealth = 0;
+         this.bossNeedsHealerRefresh = true;
+         this.bossSpecialAbortFrames = 0;
+         this.lastFriendlyStatueHealth = -1;
+         this.bossGarrisonMoveIssued = false;
+         this.bossGarrisonLastPx = 0;
+         this.bossGarrisonLastPy = 0;
+         this.bossGarrisonStuckFrames = 0;
       }
       
       override public function update(game:StickWar) : void
       {
+         var statueDamagedThisFrame:Boolean = false;
          if(!Ninja(unit).isBoss)
          {
             unit.isBossMovementLocked = false;
@@ -61,7 +105,15 @@ package com.brockw.stickwar.engine.Ai
          {
             --this.bossFocusFrames;
          }
-         if(unit.shouldStartCampaignBossEscape())
+         if(Ninja(unit).isBoss)
+         {
+            statueDamagedThisFrame = this.didFriendlyStatueTakeDamageThisFrame();
+            if(Ninja(unit).shouldStartBossLostPhase())
+            {
+               unit.startCampaignBossEscape();
+            }
+         }
+         else if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
          }
@@ -76,20 +128,26 @@ package com.brockw.stickwar.engine.Ai
             if(Ninja(unit).shouldBossRetreat())
             {
                Ninja(unit).startBossRetreat();
-            }
-            if(Ninja(unit).bossEmergencySortie)
-            {
-               Ninja(unit).isBossMovementLocked = true;
-               Ninja(unit).beginBossRecovery();
+               this.clearBossHealerTarget();
+               this.bossNeedsHealerRefresh = true;
+               this.bossSpecialAbortFrames = 0;
+               this.resetBossGarrisonRetreat();
             }
             if(Ninja(unit).bossIsRetreating)
             {
                this.clearBossFocusTarget();
                Ninja(unit).isBossMovementLocked = true;
-               this.updateBossRetreat(game);
-               return;
+               if(this.updateBossCautious(game,statueDamagedThisFrame))
+               {
+                  return;
+               }
             }
             Ninja(unit).tryBossChainCloak();
+            this.updateBossSpecialAbortState();
+            if(this.updateBossSpecialReset())
+            {
+               return;
+            }
          }
          if(currentCommand.type == UnitCommand.CURE)
          {
@@ -105,10 +163,6 @@ package com.brockw.stickwar.engine.Ai
          {
             this.tryAutoCloak();
          }
-         if(!Ninja(unit).isBoss && this.tryBossAssassinSquadMovement())
-         {
-            return;
-         }
          if(Ninja(unit).isBoss && this.tryBossAssassinMovement())
          {
             return;
@@ -123,7 +177,7 @@ package com.brockw.stickwar.engine.Ai
          {
             return super.getClosestTarget();
          }
-         if(!this.shouldUseBossAssassinProtocol() && !Ninja(unit).isBossSpecialTargetingActive())
+         if(!Ninja(unit).isBossSpecialTargetingActive())
          {
             return super.getClosestTarget();
          }
@@ -137,18 +191,19 @@ package com.brockw.stickwar.engine.Ai
 
       private function tryAutoCloak() : void
       {
-         var closestTarget:* = this.getClosestTarget();
+         var closestTarget:Unit = null;
          if(Ninja(unit).isBoss && (Ninja(unit).hasBossWhiffPenalty() || Ninja(unit).hasBossAbilitySpawnLock()))
          {
             return;
          }
-         if(Ninja(unit).isBoss && !this.shouldUseBossAssassinProtocol())
+         if(Ninja(unit).isBoss && (Ninja(unit).bossIsCautious || Ninja(unit).campaignBossEscaping || Ninja(unit).isBossSpecialTargetingActive()))
          {
             return;
          }
+         closestTarget = Ninja(unit).isBoss ? super.getClosestTarget() : this.getClosestTarget();
          if(closestTarget != null && closestTarget.isAlive())
          {
-            if(Math.abs(closestTarget.px - unit.px) < 500)
+            if(Math.abs(closestTarget.px - unit.px) < BOSS_OPENER_TRIGGER_RANGE)
             {
                if(Ninja(unit).isBoss)
                {
@@ -195,6 +250,10 @@ package com.brockw.stickwar.engine.Ai
          {
             this.lockBossFocusTarget(best);
          }
+         else if(Ninja(unit).isBossSpecialTargetingActive() && unit.team.enemyTeam != null && unit.team.enemyTeam.statue != null && unit.team.enemyTeam.statue.isAlive())
+         {
+            best = unit.team.enemyTeam.statue;
+         }
          this.cacheBossPriorityTarget(best);
          return best;
       }
@@ -233,7 +292,7 @@ package com.brockw.stickwar.engine.Ai
       {
          var retreat:MoveCommand = new MoveCommand(game);
          retreat.type = UnitCommand.MOVE;
-         retreat.goalX = unit.team.homeX + unit.team.direction * 150;
+         retreat.goalX = unit.team.homeX + unit.team.direction * 120;
          retreat.goalY = game.map.height / 2;
          retreat.realX = retreat.goalX;
          retreat.realY = retreat.goalY;
@@ -253,15 +312,16 @@ package com.brockw.stickwar.engine.Ai
          }
          if(!unit.isGarrisoned)
          {
-            this.startBossRetreatMove(game);
-            if(Math.abs(unit.px - unit.team.homeX) < 100)
+            if(this.updateBossGarrisonRetreat(game,true))
             {
-               unit.garrison();
+               unit.health = Math.min(unit.maxHealth,unit.health + 0.15);
+               return;
             }
          }
          if(unit.isGarrisoned)
          {
             unit.health = Math.min(unit.maxHealth,unit.health + 0.15);
+            return;
          }
          baseUpdate(game);
       }
@@ -269,6 +329,7 @@ package com.brockw.stickwar.engine.Ai
       private function finishBossRetreat(game:StickWar) : void
       {
          var attackMove:AttackMoveCommand = new AttackMoveCommand(game);
+         this.resetBossGarrisonRetreat();
          attackMove.type = UnitCommand.ATTACK_MOVE;
          attackMove.goalX = unit.team.enemyTeam.statue.px;
          attackMove.goalY = game.map.height / 2;
@@ -280,14 +341,15 @@ package com.brockw.stickwar.engine.Ai
       private function tryBossAssassinMovement() : Boolean
       {
          var target:Unit = this.getBossPriorityTarget();
-         var flankX:Number = NaN;
-         var flankY:Number = NaN;
-         if(!this.shouldUseBossAssassinProtocol())
+         var strikeX:Number = NaN;
+         var strikeY:Number = NaN;
+         var closeToStrike:Boolean = false;
+         if(!Ninja(unit).isBossSpecialTargetingActive())
          {
             this.clearBossFocusTarget();
             return false;
          }
-         if(target == null || !target.isAlive() || Ninja(unit).bossIsRetreating || Ninja(unit).bossEmergencySortie || unit.isGarrisoned)
+         if(target == null || !target.isAlive() || Ninja(unit).bossIsRetreating || unit.isGarrisoned)
          {
             return false;
          }
@@ -295,36 +357,28 @@ package com.brockw.stickwar.engine.Ai
          {
             return false;
          }
-         if(this.getBossTargetPriority(target) > 4)
-         {
-            return false;
-         }
          this.lockBossFocusTarget(target);
-         if(!Ninja(unit).isStealthed && Ninja(unit).stealthCooldown() == 0)
-         {
-            Ninja(unit).bossSpecialStealth();
-         }
-         if(Ninja(unit).isStealthed)
-         {
-            return false;
-         }
          if(unit.mayAttack(target))
          {
-            return false;
+            Ninja(unit).isBossMovementLocked = true;
+            unit.faceDirection(target.px - unit.px);
+            unit.attack();
+            return true;
          }
-         if(!this.hasBossFrontlineBlockers(target) && Math.abs(target.px - unit.px) < 220)
+         strikeX = target is Statue ? target.px - target.team.direction * 90 : target.px - target.team.direction * BOSS_ASSASSIN_STRIKE_OFFSET;
+         strikeY = target.py;
+         closeToStrike = Math.abs(unit.px - strikeX) < 8 && Math.abs(unit.py - strikeY) < 8;
+         if(closeToStrike)
          {
-            return false;
-         }
-         flankX = target.px - target.team.direction * 140;
-         flankY = target.py + this.getBossFlankYOffset(target);
-         if(Math.abs(unit.px - flankX) < 25 && Math.abs(unit.py - flankY) < 25)
-         {
-            return false;
+            Ninja(unit).isBossMovementLocked = true;
+            unit.mayWalkThrough = true;
+            unit.walk(0,0,Util.sgn(target.px - unit.px));
+            unit.faceDirection(target.px - unit.px);
+            return true;
          }
          Ninja(unit).isBossMovementLocked = true;
          unit.mayWalkThrough = true;
-         unit.walk((flankX - unit.px) / 60,(flankY - unit.py) / 60,Util.sgn(flankX - unit.px));
+         unit.walk((strikeX - unit.px) / 60,(strikeY - unit.py) / 60,Util.sgn(target.px - unit.px));
          unit.faceDirection(target.px - unit.px);
          return true;
       }
@@ -372,7 +426,7 @@ package com.brockw.stickwar.engine.Ai
 
       private function shouldUseBossAssassinProtocol() : Boolean
       {
-         return unit.team.currentAttackState == Team.G_ATTACK && this.countNearbyAlliedAttackers() >= 2;
+         return Ninja(unit).isBossSpecialTargetingActive();
       }
 
       private function countNearbyAlliedAttackers() : int
@@ -385,7 +439,7 @@ package com.brockw.stickwar.engine.Ai
          }
          for each(ally in unit.team.units)
          {
-            if(ally == null || ally == unit || !ally.isAlive() || ally.isGarrisoned)
+            if(ally == null || ally == unit || !ally.isAlive() || ally.isGarrisoned || ally is Statue)
             {
                continue;
             }
@@ -532,6 +586,326 @@ package com.brockw.stickwar.engine.Ai
             return this.getBossFlankYOffset(target) + 35;
          }
          return this.getBossFlankYOffset(target);
+      }
+
+      private function didFriendlyStatueTakeDamageThisFrame() : Boolean
+      {
+         var currentHealth:Number = NaN;
+         var didTakeDamage:Boolean = false;
+         if(unit.team == null || unit.team.statue == null)
+         {
+            return false;
+         }
+         currentHealth = unit.team.statue.health;
+         if(this.lastFriendlyStatueHealth < 0)
+         {
+            this.lastFriendlyStatueHealth = currentHealth;
+            return false;
+         }
+         didTakeDamage = currentHealth < this.lastFriendlyStatueHealth;
+         this.lastFriendlyStatueHealth = currentHealth;
+         return didTakeDamage;
+      }
+
+      private function updateBossSpecialAbortState() : void
+      {
+         if(!Ninja(unit).isBossSpecialTargetingActive() || Ninja(unit).bossIsCautious || unit.isGarrisoned)
+         {
+            this.bossSpecialAbortFrames = 0;
+            return;
+         }
+         if(unit.team.currentAttackState == Team.G_ATTACK || this.hasImmediateBossEngageTarget())
+         {
+            this.bossSpecialAbortFrames = 0;
+            return;
+         }
+         ++this.bossSpecialAbortFrames;
+         if(this.bossSpecialAbortFrames >= BOSS_SPECIAL_ABORT_FRAMES)
+         {
+            Ninja(unit).failBossSpecial();
+            this.bossSpecialAbortFrames = 0;
+            this.clearBossFocusTarget();
+         }
+      }
+
+      private function updateBossSpecialReset() : Boolean
+      {
+         var anchor:Unit = null;
+         var resetX:Number = NaN;
+         var resetY:Number = NaN;
+         if(!Ninja(unit).needsBossSpecialReset)
+         {
+            return false;
+         }
+         anchor = this.getBossSpecialResetAnchor();
+         if(anchor != null)
+         {
+            resetX = anchor.px - unit.team.direction * BOSS_SPECIAL_RESET_DISTANCE;
+            resetY = anchor.py;
+         }
+         else
+         {
+            resetX = unit.team.medianPosition - unit.team.direction * BOSS_SPECIAL_RESET_DISTANCE;
+            resetY = unit.team.game.map.height / 2;
+            if(unit.team.direction * resetX > unit.team.direction * unit.team.homeX)
+            {
+               resetX = unit.team.homeX + unit.team.direction * 220;
+            }
+         }
+         if(Math.abs(unit.px - resetX) < 35 && Math.abs(unit.py - resetY) < 55)
+         {
+            Ninja(unit).finishBossSpecialReset();
+            return false;
+         }
+         Ninja(unit).isBossMovementLocked = true;
+         unit.mayWalkThrough = true;
+         unit.walk((resetX - unit.px) / 90,(resetY - unit.py) / 90,Util.sgn(resetX - unit.px));
+         unit.faceDirection(resetX - unit.px);
+         return true;
+      }
+
+      private function getBossSpecialResetAnchor() : Unit
+      {
+         var ally:Unit = null;
+         var best:Unit = null;
+         for each(ally in unit.team.units)
+         {
+            if(ally == null || ally == unit || !ally.isAlive() || ally.isGarrisoned)
+            {
+               continue;
+            }
+            if(ally.type == Unit.U_MINER || ally.type == Unit.U_CHAOS_MINER)
+            {
+               continue;
+            }
+            if(best == null || ally.px * unit.team.direction > best.px * unit.team.direction)
+            {
+               best = ally;
+            }
+         }
+         return best;
+      }
+
+      private function hasImmediateBossEngageTarget() : Boolean
+      {
+         var target:Unit = super.getClosestTarget();
+         return target != null && target.isAlive() && Math.abs(target.px - unit.px) < BOSS_OPENER_TRIGGER_RANGE;
+      }
+
+      private function updateBossCautious(game:StickWar, statueDamagedThisFrame:Boolean) : Boolean
+      {
+         var healer:Monk = this.getBossHealingTarget();
+         if(unit.health >= unit.maxHealth)
+         {
+            Ninja(unit).finishBossCautious();
+            this.clearBossHealerTarget();
+            this.bossSpecialAbortFrames = 0;
+            if(unit.isGarrisoned)
+            {
+               unit.ungarrison();
+            }
+            this.finishBossCautiousRecovery(game);
+            return false;
+         }
+         if(statueDamagedThisFrame && unit.isGarrisoned)
+         {
+            unit.ungarrison();
+            Ninja(unit).enterBossFinalStand();
+            this.clearBossHealerTarget();
+            this.bossSpecialAbortFrames = 0;
+            this.finishBossRetreat(game);
+            return false;
+         }
+         if(healer != null)
+         {
+            if(healer.health < this.bossAssignedHealerHealth)
+            {
+               Ninja(unit).triggerBossEscapeCloak();
+               this.clearBossHealerTarget();
+               this.bossNeedsHealerRefresh = true;
+               healer = null;
+            }
+            else
+            {
+               this.bossAssignedHealerHealth = healer.health;
+            }
+         }
+         if(healer == null && this.bossNeedsHealerRefresh)
+         {
+            healer = this.findBossHealer();
+         }
+         if(healer != null)
+         {
+            this.resetBossGarrisonRetreat();
+            if(unit.isGarrisoned)
+            {
+               unit.ungarrison();
+            }
+            this.moveBossNearHealer(healer);
+            return true;
+         }
+         if(!unit.isGarrisoned)
+         {
+            if(this.updateBossGarrisonRetreat(game,!statueDamagedThisFrame))
+            {
+               unit.health = Math.min(unit.maxHealth,unit.health + 0.15);
+               return true;
+            }
+         }
+         if(unit.isGarrisoned)
+         {
+            unit.health = Math.min(unit.maxHealth,unit.health + 0.15);
+            return true;
+         }
+         baseUpdate(game);
+         return true;
+      }
+
+      private function updateBossGarrisonRetreat(game:StickWar, allowGarrison:Boolean) : Boolean
+      {
+         if(unit.isGarrisoned)
+         {
+            this.garrisonBossInsideCastle(game);
+            return true;
+         }
+         if(Ninja(unit).isAttackAnimationActive)
+         {
+            this.resetBossGarrisonRetreat();
+            return false;
+         }
+         if(!this.bossGarrisonMoveIssued)
+         {
+            this.startBossRetreatMove(game);
+            this.bossGarrisonMoveIssued = true;
+            this.bossGarrisonLastPx = unit.px;
+            this.bossGarrisonLastPy = unit.py;
+            this.bossGarrisonStuckFrames = 0;
+            return false;
+         }
+         if(Math.abs(unit.px - this.bossGarrisonLastPx) < 2 && Math.abs(unit.py - this.bossGarrisonLastPy) < 2)
+         {
+            ++this.bossGarrisonStuckFrames;
+         }
+         else
+         {
+            this.bossGarrisonStuckFrames = 0;
+         }
+         this.bossGarrisonLastPx = unit.px;
+         this.bossGarrisonLastPy = unit.py;
+         if(allowGarrison && this.bossGarrisonStuckFrames >= BOSS_GARRISON_STUCK_FRAMES)
+         {
+            this.garrisonBossInsideCastle(game);
+            return true;
+         }
+         return false;
+      }
+
+      private function finishBossCautiousRecovery(game:StickWar) : void
+      {
+         var stand:StandCommand = new StandCommand(game);
+         this.resetBossGarrisonRetreat();
+         stand.type = UnitCommand.STAND;
+         setCommand(game,stand);
+      }
+
+      private function resetBossGarrisonRetreat() : void
+      {
+         this.bossGarrisonMoveIssued = false;
+         this.bossGarrisonStuckFrames = 0;
+         this.bossGarrisonLastPx = unit.px;
+         this.bossGarrisonLastPy = unit.py;
+      }
+
+      private function garrisonBossInsideCastle(game:StickWar) : void
+      {
+         var stand:StandCommand = new StandCommand(game);
+         unit.x = unit.px = unit.team.homeX - unit.team.direction * game.map.screenWidth / 3;
+         unit.y = unit.py = game.map.height / 2;
+         unit.garrison();
+         this.resetBossGarrisonRetreat();
+         stand.type = UnitCommand.STAND;
+         setCommand(game,stand);
+      }
+
+      private function moveBossNearHealer(healer:Monk) : void
+      {
+         var deltaX:Number = healer.px - unit.px;
+         var deltaY:Number = healer.py - unit.py;
+         unit.isBossMovementLocked = true;
+         unit.mayWalkThrough = true;
+         if(Math.abs(deltaX) <= BOSS_HEALER_ANCHOR_X && Math.abs(deltaY) <= BOSS_HEALER_ANCHOR_Y)
+         {
+            unit.walk(0,0,unit.team.direction);
+            unit.faceDirection(unit.team.enemyTeam.statue.px - unit.px);
+            return;
+         }
+         unit.walk(deltaX / 100,deltaY / 100,Util.sgn(deltaX));
+         unit.faceDirection(healer.px - unit.px);
+      }
+
+      private function getBossHealingTarget() : Monk
+      {
+         var healer:Monk = null;
+         if(this.bossAssignedHealerId == -1 || !(this.bossAssignedHealerId in unit.team.game.units))
+         {
+            this.clearBossHealerTarget();
+            return null;
+         }
+         healer = unit.team.game.units[this.bossAssignedHealerId] as Monk;
+         if(healer == null || !healer.isAlive() || healer.isGarrisoned || healer.team != unit.team)
+         {
+            this.clearBossHealerTarget();
+            return null;
+         }
+         return healer;
+      }
+
+      private function clearBossHealerTarget() : void
+      {
+         this.bossAssignedHealerId = -1;
+         this.bossAssignedHealerHealth = 0;
+         this.bossNeedsHealerRefresh = true;
+      }
+
+      private function findBossHealer() : Monk
+      {
+         var ally:Unit = null;
+         var monk:Monk = null;
+         var bossMonk:Monk = null;
+         var nearestMonk:Monk = null;
+         var bossDistance:Number = Number.MAX_VALUE;
+         var monkDistance:Number = Number.MAX_VALUE;
+         var distance:Number = NaN;
+         for each(ally in unit.team.units)
+         {
+            if(!(ally is Monk) || !ally.isAlive() || ally.isGarrisoned)
+            {
+               continue;
+            }
+            monk = Monk(ally);
+            distance = Math.abs(monk.px - unit.px) + Math.abs(monk.py - unit.py);
+            if(monk.isBossUnit)
+            {
+               if(distance < bossDistance)
+               {
+                  bossDistance = distance;
+                  bossMonk = monk;
+               }
+            }
+            else if(distance < monkDistance)
+            {
+               monkDistance = distance;
+               nearestMonk = monk;
+            }
+         }
+         monk = bossMonk != null ? bossMonk : nearestMonk;
+         this.bossNeedsHealerRefresh = false;
+         if(monk != null)
+         {
+            this.bossAssignedHealerId = monk.id;
+            this.bossAssignedHealerHealth = monk.health;
+         }
+         return monk;
       }
 
    }

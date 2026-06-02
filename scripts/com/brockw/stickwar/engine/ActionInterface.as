@@ -408,6 +408,15 @@ package com.brockw.stickwar.engine
                      if(gameScreen.userInterface.keyBoardState.isDownForAction(UnitCommand(this.actions[this.currentActions[action]]).hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
                      {
                         gameScreen.userInterface.mouseState.clicked = false;
+                        if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
+                        {
+                           UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
+                           if(this.actionsToButtonMap[this.currentActions[action]] != null)
+                           {
+                              MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
+                           }
+                           continue;
+                        }
                         min = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
                         for(j = 1; j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length; j++)
                         {

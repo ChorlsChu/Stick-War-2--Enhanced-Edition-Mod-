@@ -106,9 +106,9 @@ package com.brockw.stickwar.engine
          }
       }
       
-      public function playSoundInBackground(name:String) : void
+      public function playSoundInBackground(name:String, startTime:Number = 0) : void
       {
-         if(name == this.currentBackgroundName)
+         if(name == this.currentBackgroundName && startTime == 0)
          {
             return;
          }
@@ -121,12 +121,56 @@ package com.brockw.stickwar.engine
             return;
          }
          var s:Sound = new this.sounds[name]();
-         this.backgroundLoop = s.play(0,int.MAX_VALUE);
+         this.backgroundLoop = s.play(startTime,int.MAX_VALUE);
          var transform:SoundTransform = new SoundTransform();
          transform.volume = this.backgroundVolume;
          this.backgroundLoop.soundTransform = transform;
          this.currentBackgroundName = name;
          this.targetBackgroundVolume = 0.2 * this.volumeMap[name];
+      }
+
+      public function restartBackgroundAtIfPast(name:String, startTime:Number) : void
+      {
+         if(this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position < startTime)
+         {
+            return;
+         }
+         this.playSoundInBackground(name,startTime);
+      }
+
+      public function restartBackgroundAtIfBefore(name:String, startTime:Number) : void
+      {
+         if(this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position >= startTime)
+         {
+            return;
+         }
+         this.playSoundInBackground(name,startTime);
+      }
+
+      public function isBackgroundAtOrPast(name:String, startTime:Number) : Boolean
+      {
+         return this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position >= startTime;
+      }
+
+      public function playCurrentBackgroundOnceFromCurrentPosition(name:String) : void
+      {
+         var startTime:Number = 0;
+         var s:Sound = null;
+         var transform:SoundTransform = null;
+         if(this.currentBackgroundName != name || this.backgroundLoop == null || this.sounds[name] == null)
+         {
+            return;
+         }
+         startTime = this.backgroundLoop.position;
+         this.backgroundLoop.stop();
+         s = new this.sounds[name]();
+         this.backgroundLoop = s.play(startTime,0);
+         if(this.backgroundLoop != null)
+         {
+            transform = new SoundTransform();
+            transform.volume = this.backgroundVolume;
+            this.backgroundLoop.soundTransform = transform;
+         }
       }
       
       public function playSoundFullVolumeRandom(baseName:String, range:int) : Number

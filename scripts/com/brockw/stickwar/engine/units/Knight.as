@@ -4,6 +4,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
+   import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.*;
@@ -12,6 +13,26 @@ package com.brockw.stickwar.engine.units
    public class Knight extends Unit
    {
       
+      public static const AUTO_CHARGE_LOCKED:Boolean = true;
+
+      private static const BOSS_WEAPON_SKIN:String = "Rusted Axe";
+
+      private static const BOSS_ARMOR_SKIN:String = "Rust Helmet";
+
+      private static const BOSS_MISC_SKIN:String = "Rusted Shield";
+
+      private static const BOSS_DAMAGE_MULTIPLIER:Number = 1.5;
+
+      private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 0.7;
+
+      private static const BOSS_PROJECTILE_RESISTANCE:Number = 0.5;
+
+      private static const BOSS_SPELL_RESISTANCE:Number = 0.5;
+
+      private static const BOSS_ABILITY_COOLDOWN_FRAMES:int = 30 * 20;
+
+      private static const BOSS_CHARGE_ALLY_RADIUS:Number = 300;
+
       private static var WEAPON_REACH:int;
       
       private var chargeVelocity:Number;
@@ -37,6 +58,10 @@ package com.brockw.stickwar.engine.units
       private var stunEffect:Number;
       
       private var stunForce:Number;
+
+      private var _isBoss:Boolean;
+
+      private var bossAbilityCooldownFrames:int;
       
       public function Knight(game:StickWar)
       {
@@ -51,6 +76,8 @@ package com.brockw.stickwar.engine.units
          this.chargeForce = 0;
          this.hasCharged = false;
          this.stunned = null;
+         this._isBoss = false;
+         this.bossAbilityCooldownFrames = 0;
       }
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
@@ -106,6 +133,8 @@ package com.brockw.stickwar.engine.units
          loadDamage(game.xml.xml.Chaos.Units.knight);
          type = Unit.U_KNIGHT;
          this.chargeSpell = new SpellCooldown(game.xml.xml.Chaos.Units.knight.charge.effect,game.xml.xml.Chaos.Units.knight.charge.cooldown,game.xml.xml.Chaos.Units.knight.charge.mana);
+         this._isBoss = false;
+         this.bossAbilityCooldownFrames = 0;
          _mc.stop();
          _mc.width *= _scale;
          _mc.height *= _scale;
@@ -129,9 +158,18 @@ package com.brockw.stickwar.engine.units
       {
          return this.chargeSpell.cooldown();
       }
+
+      public function canUseChargeAbility() : Boolean
+      {
+         return true;
+      }
       
       public function charge() : void
       {
+         if(!this.canUseChargeAbility())
+         {
+            return;
+         }
          if(!team.tech.isResearched(Tech.KNIGHT_CHARGE))
          {
             return;
@@ -164,6 +202,10 @@ package com.brockw.stickwar.engine.units
       
       override public function update(game:StickWar) : void
       {
+         if(this.bossAbilityCooldownFrames > 0)
+         {
+            --this.bossAbilityCooldownFrames;
+         }
          this.chargeSpell.update();
          updateCommon(game);
          if(mc.mc.sword != null)
@@ -273,10 +315,31 @@ package com.brockw.stickwar.engine.units
          {
             Util.animateMovieClipBasic(_mc.mc.dust);
          }
-         if(!hasDefaultLoadout)
+         if(this.isBoss)
+         {
+            Knight.setItem(_knight(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
+         }
+         else
          {
             Knight.setItem(_knight(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }
+      }
+
+      override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
+      {
+         if(this.isBoss)
+         {
+            modifier *= BOSS_DAMAGE_TAKEN_MULTIPLIER;
+            if(Boolean(type & Unit.D_ARROW))
+            {
+               modifier *= 1 - BOSS_PROJECTILE_RESISTANCE;
+            }
+            if(Boolean(type & Unit.D_FIRE) || inflictor == null)
+            {
+               modifier *= 1 - BOSS_SPELL_RESISTANCE;
+            }
+         }
+         super.damage(type,amount,inflictor,modifier);
       }
       
       override public function get damageToArmour() : Number
@@ -292,7 +355,7 @@ package com.brockw.stickwar.engine.units
       override public function setActionInterface(a:ActionInterface) : void
       {
          super.setActionInterface(a);
-         if(team.tech.isResearched(Tech.KNIGHT_CHARGE))
+         if(this.canUseChargeAbility() && team.tech.isResearched(Tech.KNIGHT_CHARGE))
          {
             a.setAction(0,0,UnitCommand.KNIGHT_CHARGE);
          }
@@ -344,6 +407,68 @@ package com.brockw.stickwar.engine.units
       override protected function isAbleToWalk() : Boolean
       {
          return this._state == S_RUN && (!this.chargeSpell.inEffect() || this.isChargeSet);
+      }
+
+      public function makeBoss() : void
+      {
+         if(this._isBoss)
+         {
+            return;
+         }
+         this._isBoss = true;
+         this.isBossUnit = true;
+         this.bossAbilitySpawnLockFrames = 30 * 2;
+         damageToDeal *= BOSS_DAMAGE_MULTIPLIER;
+         this._damageToArmour *= BOSS_DAMAGE_MULTIPLIER;
+         this._damageToNotArmour *= BOSS_DAMAGE_MULTIPLIER;
+         this.hasDefaultLoadout = false;
+      }
+
+      public function tryBossCharge() : void
+      {
+         var ally:Knight = null;
+         var target:Unit = null;
+         if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossAbilityCooldownFrames > 0 || this.isBusy() || this.isGarrisoned || this.campaignBossEscaping)
+         {
+            return;
+         }
+         target = this.ai.getClosestTarget();
+         if(target == null || target.pz != 0)
+         {
+            return;
+         }
+         if(Math.abs(target.px - this.px) < 150 || Math.abs(target.px - this.px) > 450)
+         {
+            return;
+         }
+         this.commandBossCharge(true);
+         for each(ally in team.unitGroups[Unit.U_KNIGHT])
+         {
+            if(ally != null && ally != this && ally.isAlive() && !ally.isGarrisoned && ally.sqrDistanceToTarget(this) <= BOSS_CHARGE_ALLY_RADIUS * BOSS_CHARGE_ALLY_RADIUS)
+            {
+               ally.commandBossCharge(false);
+            }
+         }
+         this.bossAbilityCooldownFrames = BOSS_ABILITY_COOLDOWN_FRAMES;
+      }
+
+      public function commandBossCharge(playSound:Boolean = true) : void
+      {
+         if(this._isDualing || this.isDieing || this.isDead || this.isGarrisoned || this.isIncapacitated())
+         {
+            return;
+         }
+         if(playSound)
+         {
+            team.game.soundManager.playSound("deathKnightChargeSound",px,py);
+         }
+         this.chargeSpell.forceActivate();
+         this.hasCharged = false;
+      }
+
+      public function get isBoss() : Boolean
+      {
+         return this._isBoss;
       }
    }
 }

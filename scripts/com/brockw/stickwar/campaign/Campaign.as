@@ -33,6 +33,10 @@ package com.brockw.stickwar.campaign
       public var difficultyLevel:int;
       
       public var isAutoSaveEnabled:Boolean;
+
+      public var isReplay:Boolean;
+
+      public var replayLevel:int;
       
       public function Campaign(skipToLevel:int, difficulty:int)
       {
@@ -54,6 +58,8 @@ package com.brockw.stickwar.campaign
          this.difficultyLevel = difficulty;
          this.justTutorial = false;
          this.isAutoSaveEnabled = false;
+         this.isReplay = false;
+         this.replayLevel = -1;
       }
       
       private function getDifficultyDescription() : String
@@ -75,12 +81,25 @@ package com.brockw.stickwar.campaign
       
       public function getLevelDescription() : String
       {
-         return "level" + this.currentLevel + "_" + this.getDifficultyDescription();
+         return "level" + this.getCurrentLevelIndex() + "_" + this.getDifficultyDescription();
       }
       
       public function isGameFinished() : Boolean
       {
          return this.currentLevel >= this.levels.length;
+      }
+
+      public function hasLockedUpgrades() : Boolean
+      {
+         var u:CampaignUpgrade = null;
+         for each(u in this.upgradeMap)
+         {
+            if(!u.upgraded)
+            {
+               return true;
+            }
+         }
+         return false;
       }
       
       private function initUpgradeTree() : void
@@ -145,7 +164,20 @@ package com.brockw.stickwar.campaign
       
       public function getCurrentLevel() : Level
       {
-         return this.levels[this._currentLevel];
+         return this.levels[this.getCurrentLevelIndex()];
+      }
+
+      public function getCurrentLevelIndex() : int
+      {
+         if(this.isReplay && this.replayLevel >= 0 && this.replayLevel < this.levels.length)
+         {
+            return this.replayLevel;
+         }
+         if(this._currentLevel >= this.levels.length)
+         {
+            return this.levels.length - 1;
+         }
+         return this._currentLevel;
       }
       
       public function get currentLevel() : int
@@ -174,7 +206,6 @@ package com.brockw.stickwar.campaign
          cookie.data.campaignPoints = this.campaignPoints;
          cookie.data.difficultyLevel = this.difficultyLevel;
          var tech:Array = new Array();
-         trace("techs");
          for each(u in this.upgradeMap)
          {
             if(u.upgraded)
@@ -194,7 +225,6 @@ package com.brockw.stickwar.campaign
          cookie.data.levels = levels;
          cookie.data.techAllowed = tech;
          cookie.flush();
-         trace("Saved the game");
       }
       
       public function saveGameExists() : Boolean
@@ -217,6 +247,8 @@ package com.brockw.stickwar.campaign
          this.currentLevel = cookie.data.currentLevel;
          this.campaignPoints = cookie.data.campaignPoints;
          this.difficultyLevel = cookie.data.difficultyLevel;
+         this.isReplay = false;
+         this.replayLevel = -1;
          var tech:Array = new Array();
          for each(t in cookie.data.techAllowed)
          {
@@ -233,7 +265,6 @@ package com.brockw.stickwar.campaign
             i++;
          }
          cookie.data.levels = this.levels;
-         trace("Loaded campaign at level ",this.currentLevel);
       }
       
       public function get justTutorial() : Boolean

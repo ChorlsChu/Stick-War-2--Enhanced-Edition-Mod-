@@ -22,7 +22,7 @@ package com.brockw.stickwar.engine.Ai
          {
             if(Unit(this.team.units[unit]).isAlive())
             {
-               if(Unit(this.team.units[unit]).reaperCurseFrames == 0)
+               if(Unit(this.team.units[unit]).reaperCurseFrames == 0 || Unit(this.team.units[unit]).isConfused())
                {
                   this.team.units[unit].ai.update(game);
                }

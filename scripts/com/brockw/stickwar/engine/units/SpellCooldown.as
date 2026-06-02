@@ -59,14 +59,24 @@ package com.brockw.stickwar.engine.units
          this.counter = 0;
          this.activeEffectOverride = effectFrames;
       }
+
+      public function clearCooldown() : void
+      {
+         this.counter = this.cooldownTime;
+         this.activeEffectOverride = -1;
+      }
+
+      public function endEffect() : void
+      {
+         if(this.counter < this.currentEffectFrames())
+         {
+            this.counter = this.currentEffectFrames();
+         }
+      }
       
       public function update() : void
       {
          ++this.counter;
-         if(this.activeEffectOverride >= 0 && this.counter >= this.activeEffectOverride)
-         {
-            this.activeEffectOverride = -1;
-         }
       }
       
       public function timeRunning() : Number
