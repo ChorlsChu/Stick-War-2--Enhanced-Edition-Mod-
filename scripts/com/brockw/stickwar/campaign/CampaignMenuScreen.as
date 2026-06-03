@@ -543,11 +543,11 @@ package com.brockw.stickwar.campaign
       
       private function onlineButton(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("https://aseplayer.github.io/sw-mods/");
+         var url:URLRequest = new URLRequest("https://sw2cm.github.io/stick-war-mods/");
          navigateToURL(url,"_blank");
          if(this.main.tracker != null)
          {
-            this.main.tracker.trackEvent("link","https://aseplayer.github.io/sw-mods/");
+            this.main.tracker.trackEvent("link","https://sw2cm.github.io/stick-war-mods/");
          }
       }
       
