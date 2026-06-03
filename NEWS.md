@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 - Bug fixes
+
+### Fixed
+- Spearton boss teleporting
+- Spearton boss's helmet floating
+
 ## v1.0.0 - Initial Enhanced Edition Release
 
 ### Added
