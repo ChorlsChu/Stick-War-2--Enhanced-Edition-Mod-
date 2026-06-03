@@ -991,12 +991,17 @@ package com.brockw.stickwar.engine.Team
       public function spawn(unit:Unit, game:StickWar) : void
       {
          unit.isTowerSpawned = false;
+         unit.forceTowerSpawnVisual = false;
+         unit.suppressTowerSpawnVisual = false;
+         unit.isBossSummoned = false;
          unit.isDead = false;
          unit.isDieing = false;
          unit.team = this;
          unit.setBuilding();
          var c:ColorTransform = unit.mc.transform.colorTransform;
          var r:int = game.random.nextInt();
+         c.greenOffset = 0;
+         c.blueOffset = 0;
          if(this.isEnemy)
          {
             c.redOffset = 75;
@@ -1004,11 +1009,13 @@ package com.brockw.stickwar.engine.Team
          else
          {
             c.redOffset = 0;
-            c.blueOffset = 0;
-            c.greenOffset = 0;
          }
          unit.isOnFire = false;
          unit.mc.transform.colorTransform = c;
+         if(Boolean(unit.mc.mc))
+         {
+            unit.mc.mc.filters = [];
+         }
          unit.id = game.getNextUnitId();
          game.units[unit.id] = unit;
          if(unit.building == null)

@@ -195,6 +195,8 @@ package com.brockw.stickwar.engine
          this._battlefield = new Sprite();
          this._battlefield.x = 0;
          this._battlefield.y = this._map.y;
+         this._battlefield.mouseEnabled = false;
+         this._battlefield.mouseChildren = false;
          ++main.loadingFraction;
          this.shadowClip = new Shadows(this._map);
          this.shadowClip.x = 0;
@@ -210,6 +212,13 @@ package com.brockw.stickwar.engine
             this._bloodManager = new BloodManager();
          }
          this._bloodManager.y = this.battlefield.y;
+         this._bloodManager.mouseEnabled = false;
+         this._bloodManager.mouseChildren = false;
+         if(this._background != null)
+         {
+            this._background.mouseEnabled = false;
+            this._background.mouseChildren = false;
+         }
          addChild(this._bloodManager);
          addChild(this._battlefield);
          addChild(this._rain);
@@ -245,6 +254,8 @@ package com.brockw.stickwar.engine
       override public function postInit() : void
       {
          this.fogOfWar = new FogOfWar(this);
+         this.fogOfWar.mouseEnabled = false;
+         this.fogOfWar.mouseChildren = false;
          addChild(this.fogOfWar);
          this.fogOfWar.isFogOn = this.xml.xml.isFogOfWar == 1;
       }
@@ -383,6 +394,7 @@ package com.brockw.stickwar.engine
          var mouseX:Number = NaN;
          var mouseY:Number = NaN;
          var isVisible:Boolean = false;
+         var skipMouseHover:Boolean = false;
          this.teamA.updateStatue();
          this.teamB.updateStatue();
          if(this.showGameOverAnimation)
@@ -400,6 +412,7 @@ package com.brockw.stickwar.engine
          this.mouseOverUnit = null;
          this._incomeDisplay.update(this);
          var gameScreen:GameScreen = GameScreen(screen);
+         skipMouseHover = gameScreen.userInterface != null && gameScreen.userInterface.isMouseEdgeScrolling && !gameScreen.userInterface.mouseState.mouseDown && !gameScreen.userInterface.mouseState.clicked;
          this._rain.update(this);
          if(this.teamA.statue.health <= 0)
          {
@@ -427,7 +440,7 @@ package com.brockw.stickwar.engine
          this.wallHitPoint.x = mouseX;
          this.wallHitPoint.y = mouseY;
          this.team.enemyTeam.statue.mouseIsOver = false;
-         if(this.team.enemyTeam.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.enemyTeam.statue))
+         if(!skipMouseHover && this.team.enemyTeam.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.enemyTeam.statue))
          {
             this.mouseOverUnit = this.team.enemyTeam.statue;
          }
@@ -446,7 +459,7 @@ package com.brockw.stickwar.engine
             if(isVisible)
             {
                unitObj.mouseIsOver = false;
-               if(Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
+               if(!skipMouseHover && Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
                {
                   if(this.determineIfBetterSelection(unitObj))
                   {
@@ -470,7 +483,7 @@ package com.brockw.stickwar.engine
             if(isVisible)
             {
                unitObj.mouseIsOver = false;
-               if(Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
+               if(!skipMouseHover && Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
                {
                   if(this.determineIfBetterSelection(unitObj))
                   {
@@ -482,7 +495,7 @@ package com.brockw.stickwar.engine
          for(gold in this.map.gold)
          {
             Entity(this.map.gold[gold]).mouseIsOver = false;
-            if(Gold(this.map.gold[gold]).frontOre.hitTestPoint(mouseX,mouseY,true) || Gold(this.map.gold[gold]).ore.hitTestPoint(mouseX,mouseY,true))
+            if(!skipMouseHover && (Gold(this.map.gold[gold]).frontOre.hitTestPoint(mouseX,mouseY,true) || Gold(this.map.gold[gold]).ore.hitTestPoint(mouseX,mouseY,true)))
             {
                if(this.determineIfBetterSelection(Entity(this.map.gold[gold])))
                {
@@ -492,11 +505,11 @@ package com.brockw.stickwar.engine
             Gold(this.map.gold[gold]).update(this);
          }
          this.team.statue.mouseIsOver = false;
-         if(this.team.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.statue))
+         if(!skipMouseHover && this.team.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.statue))
          {
             this.mouseOverUnit = this.team.statue;
          }
-         if(this.mouseOverUnit == null)
+         if(!skipMouseHover && this.mouseOverUnit == null)
          {
             for each(wall in this.team.enemyTeam.walls)
             {
@@ -642,6 +655,11 @@ package com.brockw.stickwar.engine
       public function set battlefield(value:Sprite) : void
       {
          this._battlefield = value;
+         if(this._battlefield != null)
+         {
+            this._battlefield.mouseEnabled = false;
+            this._battlefield.mouseChildren = false;
+         }
       }
       
       public function get background() : Background
@@ -652,6 +670,11 @@ package com.brockw.stickwar.engine
       public function set background(value:Background) : void
       {
          this._background = value;
+         if(this._background != null)
+         {
+            this._background.mouseEnabled = false;
+            this._background.mouseChildren = false;
+         }
       }
       
       public function get map() : Map
@@ -872,6 +895,11 @@ package com.brockw.stickwar.engine
       public function set bloodManager(value:BloodManager) : void
       {
          this._bloodManager = value;
+         if(this._bloodManager != null)
+         {
+            this._bloodManager.mouseEnabled = false;
+            this._bloodManager.mouseChildren = false;
+         }
       }
       
       public function get postCursors() : Array
@@ -892,6 +920,11 @@ package com.brockw.stickwar.engine
       public function set fogOfWar(value:FogOfWar) : void
       {
          this._fogOfWar = value;
+         if(this._fogOfWar != null)
+         {
+            this._fogOfWar.mouseEnabled = false;
+            this._fogOfWar.mouseChildren = false;
+         }
       }
       
       public function get commandFactory() : CommandFactory

@@ -82,6 +82,10 @@ package com.brockw.stickwar.engine
       
       public var isGlobalsEnabled:Boolean = true;
       
+      public var isMouseEdgeScrolling:Boolean = false;
+      
+      private var mouseEdgeScrollGraceFrames:int = 0;
+      
       private var isUnitCreationEnabled:Boolean = true;
       
       private var _helpMessage:HelpMessage;
@@ -743,6 +747,7 @@ package com.brockw.stickwar.engine
             this.jumpToPoisonedUnitIfDoublePressed();
             this.poisonedPressTimer = getTimer();
          }
+         this.isMouseEdgeScrolling = false;
          if(this.mouseState.mouseIn && this.stage.mouseY < this.gameScreen.game.battlefield.y + 240)
          {
             mouseWidth = 120;
@@ -750,12 +755,23 @@ package com.brockw.stickwar.engine
             {
                this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (mouseWidth - stage.mouseX) / mouseWidth;
                this.isSlowCamera = false;
+               this.isMouseEdgeScrolling = true;
             }
             if(this.stage.mouseX > this.gameScreen.game.map.screenWidth - mouseWidth)
             {
                this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (this.gameScreen.game.map.screenWidth - mouseWidth - stage.mouseX) / mouseWidth;
                this.isSlowCamera = false;
+               this.isMouseEdgeScrolling = true;
             }
+         }
+         if(this.isMouseEdgeScrolling)
+         {
+            this.mouseEdgeScrollGraceFrames = 10;
+         }
+         else if(this.mouseEdgeScrollGraceFrames > 0)
+         {
+            --this.mouseEdgeScrollGraceFrames;
+            this.isMouseEdgeScrolling = true;
          }
          if(this.mouseState.mouseDown)
          {
@@ -772,7 +788,10 @@ package com.brockw.stickwar.engine
          }
          if(!this.actionInterface.isInCommand() && this.stage.mouseY <= 700 - 125)
          {
-            this.tryToSelectABuilding();
+            if(!this.isMouseEdgeScrolling || this.mouseState.clicked || this.mouseState.mouseDown)
+            {
+               this.tryToSelectABuilding();
+            }
             if(this.mouseState.clicked)
             {
                if(!this.keyBoardState.isShift)

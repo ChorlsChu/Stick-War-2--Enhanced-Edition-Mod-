@@ -3,8 +3,10 @@
 ## v1.0.1 - Bug fixes
 
 ### Fixed
-- Spearton boss teleporting
-- Spearton boss's helmet floating
+- Fixed Spearton Boss teleporting instantly during Lost Phase.
+- Fixed Spearton Boss helmet floating during certain animations.
+- Fixed mouse-edge camera panning causing occasional lag spikes.(Needs more testing but pls inform me if you experienced a crash over this)
+- Improved world-layer mouse handling to reduce Flash display-tree overhead during camera movement.
 
 ## v1.0.0 - Initial Enhanced Edition Release
 

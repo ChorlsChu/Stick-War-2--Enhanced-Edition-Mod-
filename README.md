@@ -181,12 +181,32 @@ Difficulty affects more than basic enemy strength in this mod:
 
 Some boss encounters and reinforcement waves scale by difficulty, so the campaign may feel noticeably different between modes.
 
+### Boss Ability Queue
+
+In levels like Rebels United(Westwind) where you fight all bosses at once, only up to 3 bosses can use special abilities at the same time. The active queue lasts 10 seconds, then rotates to another set of bosses. Bosses outside the queue still attack normally, but their special abilities are temporarily paused. This keeps fights balanced, readable, and less performance-heavy.
+
+Boss selection uses fair weighted randomness. On the first wave, all living bosses have an equal chance to be selected. After a boss is selected, its chance is lowered for the next queue, while bosses that were not selected become more likely to rotate in later. This keeps ability usage varied without letting every boss spam abilities at once.
+
 ## Unit Toggles
 
 ![MagiKill Cast](gifs/magikill.gif)
 - `Magikill Autocast`
   - Cycle between `Auto Cast`, `Meteor Only`, and `Disabled Autocast`.
   - Magikill starts with autocast disabled.
+
+There are two types of Autocast:
+ - `Attack Autocast`
+   - Pushes forward if no enemies in spell range all the way to melee close range.
+   - Uses if on AttackMove command
+ - `Defend Autocast`
+   - Basically Hold Command but uses spells if enemy in range but does not push.
+   - Used if on Hold command or defend base
+
+Note: Autocast will be pick a spell by weight randomness to make it more dynamic and less strict on spell priority:
+`Meteor`- 5
+`Lightning` - 3
+`Poison` - 2
+
 
 ![Archer Kite](gifs/archidon.gif)
 - `Archidon Auto Kite`

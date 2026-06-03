@@ -11,7 +11,6 @@ package com.brockw.stickwar.engine
    
    public class Background extends Entity
    {
-      
       private var layers:Vector.<MovieClip>;
       
       private var _mapLength:int;
