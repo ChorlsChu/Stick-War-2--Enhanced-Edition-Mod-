@@ -150,6 +150,12 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
   - Controlled units cannot be selected by the player.
   - Controlled Magikill can cast spells against its own allies.
 
+### Medusa Final Boss
+
+- `Look at Me`
+  - All units facing at her in her turns into stone.
+  - Can be avoided by looking away.
+
 ## Campaign Changes
 
 - Bosses appear in their own campaign levels.
