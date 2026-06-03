@@ -10,7 +10,6 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
-   import flash.geom.ColorTransform;
    
    public class Spearton extends Unit
    {
@@ -354,28 +353,10 @@ package com.brockw.stickwar.engine.units
          if(this.isBoss)
          {
             Spearton.setItem(_speartonMc(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
-            this.applyBossHelmetTint();
          }
          else if(!hasDefaultLoadout)
          {
             Spearton.setItem(_speartonMc(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
-            this.clearBossHelmetTint();
-         }
-      }
-
-      private function applyBossHelmetTint() : void
-      {
-         if(Boolean(_mc.mc.helm))
-         {
-            _mc.mc.helm.transform.colorTransform = new ColorTransform(1,0.82,0.18,1,90,55,0,0);
-         }
-      }
-
-      private function clearBossHelmetTint() : void
-      {
-         if(Boolean(_mc.mc.helm))
-         {
-            _mc.mc.helm.transform.colorTransform = new ColorTransform();
          }
       }
       

@@ -320,6 +320,8 @@ package com.brockw.stickwar.engine.units
       private var _campaignBossEscapeLastPy:Number;
 
       private var _campaignBossEscapeStuckFrames:int;
+
+      private var _campaignBossEscapeMoveGraceFrames:int;
       
       private var _ddx:Number;
       
@@ -342,6 +344,7 @@ package com.brockw.stickwar.engine.units
          this._campaignBossEscapeLastPx = 0;
          this._campaignBossEscapeLastPy = 0;
          this._campaignBossEscapeStuckFrames = 0;
+         this._campaignBossEscapeMoveGraceFrames = 0;
          this.isTowerSpawned = false;
          this.suppressTowerSpawnVisual = false;
          this.forceTowerSpawnVisual = false;
@@ -2256,6 +2259,7 @@ package com.brockw.stickwar.engine.units
          this._campaignBossEscapeLastPx = this.px;
          this._campaignBossEscapeLastPy = this.py;
          this._campaignBossEscapeStuckFrames = 0;
+         this._campaignBossEscapeMoveGraceFrames = 0;
       }
 
       public function updateCampaignBossEscape(game:StickWar) : Boolean
@@ -2290,6 +2294,19 @@ package com.brockw.stickwar.engine.units
             retreatCommand.realY = retreatGoalY;
             this.ai.setCommand(game,retreatCommand);
             this._campaignBossEscapeMoveIssued = true;
+            this._campaignBossEscapeMoveGraceFrames = 45;
+            this.ai.baseUpdate(game);
+            return true;
+         }
+         if(this.ai.currentCommand == null || this.ai.currentCommand.type != UnitCommand.MOVE || this._campaignBossEscapeMoveGraceFrames > 0)
+         {
+            if(this._campaignBossEscapeMoveGraceFrames > 0)
+            {
+               --this._campaignBossEscapeMoveGraceFrames;
+            }
+            this._campaignBossEscapeStuckFrames = 0;
+            this._campaignBossEscapeLastPx = this.px;
+            this._campaignBossEscapeLastPy = this.py;
             this.ai.baseUpdate(game);
             return true;
          }
