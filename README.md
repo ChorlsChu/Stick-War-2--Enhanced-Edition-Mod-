@@ -233,7 +233,7 @@ Debug mode is included for testing, screenshots, and messing around after finish
 - `Shift + 5` - Spawn allied Shadowrath
 - `Shift + 6` - Spawn enemy Spearton
 - `Shift + 7` - Spawn enemy Archidons
-- `Shift + 8` - Spawn enemy Shadowrath at enemy base
+- `Shift + 8` - Spawn enemy Shadowrath
 - `Shift + 9` - Spawn enemy Magikill + Meric
 
 ### Chaos Debug Set
