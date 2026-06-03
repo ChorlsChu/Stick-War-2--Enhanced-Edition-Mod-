@@ -168,6 +168,19 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - After finishing the campaign, completed levels can be replayed from the campaign map.
 - The upgrade screen can now be opened from the campaign map.
 
+Difficulty affects more than basic enemy strength in this mod:
+- `Normal`
+  - Recommended for a first playthrough.
+  - Boss fights are still stronger than the original game, but more forgiving.
+- `Hard`
+  - Enemy waves and boss pressure are stronger.
+  - Reinforcement timing and army pressure are less forgiving.
+- `Insane`
+  - Intended for players who already know the campaign.
+  - Bosses, reinforcements, and enemy pressure are at their most punishing.
+
+Some boss encounters and reinforcement waves scale by difficulty, so the campaign may feel noticeably different between modes.
+
 ## Unit Toggles
 
 ![MagiKill Cast](gifs/magikill.gif)
