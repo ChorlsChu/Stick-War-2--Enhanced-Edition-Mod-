@@ -21,7 +21,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - Smarter campaign enemy AI with better army advantage checks and less awkward cautious attacks.
 - Campaign reinforcements with temporary statue protection to prevent instant wave deletion.
 - New boss abilities, passives, cosmetics, and phase behavior.
-- Player-side quality-of-life toggles for Archidons, Shadowraths, and Magikill.
+- Player-side toggles for Archidons, Shadowraths, and Magikill.
 - Intro video now plays directly on the intro screen instead of only showing a link.
 - Finished campaigns can replay completed levels from the campaign map.
 - Upgrade screen is accessible directly from the campaign map.
