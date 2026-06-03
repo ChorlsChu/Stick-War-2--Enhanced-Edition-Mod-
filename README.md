@@ -82,7 +82,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 
 - `Arrow Storm`
   - Fires a Blue glowing arrow that slows down enemies that got it.
-  - Can command nearby Speartons to fire with him.
+  - Can command nearby Archidons to fire arrow storm with him.
 - `Fire Arrows`
   - Shoots one fire arrow that does more damage.
   - Can command nearby Archidons to shoot fire arrows him.
