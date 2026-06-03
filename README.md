@@ -96,7 +96,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `Cloak 3`
   - Cloaks that last 12 seconds and same damage as Cloak 1.
   - Each successful hit can immediately cloaks again but this time same damage as Cloak 2 but lasts 1.5 seconds.
-  - Flanks and targets
+  - Flanks and targets supporting units (Archers, Merics, Magikills, Enslaved Giants)
 - Note: was thinking of adding clone ability but this Cloak 3 is already powerful enough i think
 - `Cautious Phase`
   - Enters phase when below 50% HP
@@ -193,9 +193,18 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `P` or `Esc` - Pause
 - `Space` - Select all non-miner units
 - Double-tap `Space` - Jump camera to your forward unit
-- `G` - Garrison or ungarrison selected units
-- `U` - Ungarrison full-health units
+- `Tab` - Cycle selected unit type
+- `D` - Move selected units
+- `A` - Attack move selected units
+- `H` - Hold/defend position
+- `S` - Stop/cancel current command
+- `G` - Garrison selected units
+- `G` while selecting garrisoned units - Ungarrison selected units
+- `U` - Select full-health garrisoned units
 - `I` - Select all garrisoned units
+- `V` - Command all units to garrison
+- `B` - Command all units to defend
+- `N` - Command all units to attack
 - `J` - Select poisoned units
 
 ## Optional Debug Keybinds
