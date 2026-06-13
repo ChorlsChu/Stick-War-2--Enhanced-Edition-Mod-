@@ -60,6 +60,14 @@ package com.brockw.stickwar.campaign
 
       private var mapPanMoved:Boolean;
 
+      private var mapHiddenFrames:int;
+
+      private var mapStartDelayFrames:int;
+
+      private var mapCanAdvance:Boolean;
+
+      private var mapStartDelayApplied:Boolean;
+
       public function CampaignScreen(main:BaseMain)
       {
          super();
@@ -91,6 +99,10 @@ package com.brockw.stickwar.campaign
          this.mapPanStartMouse = null;
          this.mapPanStartMap = null;
          this.mapPanMoved = false;
+         this.mapHiddenFrames = 0;
+         this.mapStartDelayFrames = 0;
+         this.mapCanAdvance = false;
+         this.mapStartDelayApplied = false;
          this.mapBackdrop.visible = this.main.campaign.isGameFinished();
          if(this.main.campaign.isGameFinished())
          {
@@ -101,17 +113,19 @@ package com.brockw.stickwar.campaign
          if(this.main.campaign.isGameFinished())
          {
             this.mc.gotoAndStop("level" + this.completedMapFrame);
-            this.mc.map.gotoAndStop(this.mc.currentFrame);
+            this.syncMapToCurrentFrame();
             this.removeDuplicateReplayFlags();
          }
          else if(this.main.campaign.currentLevel != 0)
          {
             this.mc.gotoAndStop("level" + this.main.campaign.currentLevel);
+            this.syncMapToCurrentFrame();
          }
          else
          {
             this.mc.gotoAndStop(1);
             this.mc.map.stop();
+            this.syncMapToCurrentFrame();
          }
          addEventListener(Event.ENTER_FRAME,this.update);
          addEventListener(MouseEvent.CLICK,this.click);
@@ -697,6 +711,12 @@ package com.brockw.stickwar.campaign
          }
          targetFrameLabel = isCompleted && this.selectedReplayLevel != -1 ? this.mc.currentFrameLabel : (isCompleted ? "level" + this.completedMapFrame : "level" + (this.main.campaign.currentLevel + 1));
          this.mc.stop();
+         if(!this.canAdvanceMapThisFrame())
+         {
+            this.syncMapToCurrentFrame();
+            this.updateLevelDisplayText();
+            return;
+         }
          if(this.mc.currentFrameLabel != targetFrameLabel)
          {
             this.stepMapTowardLevel(targetFrameLabel);
@@ -756,6 +776,41 @@ package com.brockw.stickwar.campaign
             return;
          }
          this.mc.nextFrame();
+      }
+
+      private function syncMapToCurrentFrame() : void
+      {
+         if(this.mc == null || this.mc.map == null)
+         {
+            return;
+         }
+         this.currentDisplayedMapFrame = this.mc.currentFrame;
+         this.mc.map.gotoAndStop(this.currentDisplayedMapFrame);
+      }
+
+      private function canAdvanceMapThisFrame() : Boolean
+      {
+         if(this.mapCanAdvance)
+         {
+            return true;
+         }
+         if(!this.visible)
+         {
+            ++this.mapHiddenFrames;
+            return false;
+         }
+         if(this.mapHiddenFrames > 2 && !this.mapStartDelayApplied)
+         {
+            this.mapStartDelayFrames = 16;
+            this.mapStartDelayApplied = true;
+         }
+         if(this.mapStartDelayFrames > 0)
+         {
+            --this.mapStartDelayFrames;
+            return false;
+         }
+         this.mapCanAdvance = true;
+         return true;
       }
 
       private function updateLevelDisplayText() : void

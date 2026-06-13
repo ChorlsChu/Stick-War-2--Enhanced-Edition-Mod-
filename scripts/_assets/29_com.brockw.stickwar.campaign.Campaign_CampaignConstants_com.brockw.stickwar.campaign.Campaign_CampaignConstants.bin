@@ -1,5 +1,5 @@
 <Campaign>
-<level title="Tutorial" number="1" map="2" story="Many of the empires you previously controlled are now rebels that have fled to the outskirts of their homelands. You are faced with the threat of attack. Speartons have rebuilt and declared war against your diminished army." controller="CampaignTutorial" points="1">
+<level title="Tutorial" number="1" map="2" story="Many of the empires you previously controlled are now rebels that have fled to the outskirts of their homelands. You are faced with the threat of attack. Speartons have rebuilt and declared war against your diminished army." controller="CampaignTutorial" points="2">
 <player race="Order" statueHealth="1500" >
 <unit>Swordwrath</unit>
 </player>
@@ -17,9 +17,36 @@
 
 </level>
 
-<level title="Blot out the sun: Archidons Declare War" number="2" map="4" story="The Archidon Empire wants revenge and their land back.  They have declared war against your Empire." controller="CampaignArcher" points="1">
-
+<level title="Ambush: Native Tribes" number="2" map="2" story="Before reaching the Archidons, scattered native tribes strike from the hills. They may not march under a formal banner, but their spears are just as deadly. Hold them off until reinforcements arrive" controller="CampaignAmbush" points="1">
 <unlock>Spearton</unlock>
+<normal>1.7</normal>
+<hard>1.25</hard>
+<insane>.75</insane>
+<normalHealthScale>.5</normalHealthScale>
+<tip>Tip: Hold your ground and survive the native tribe raid.</tip>
+
+<player race="Order" statueHealth="1000">
+<unit>Swordwrath</unit>
+<unit>Spearton</unit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Spearton</startingUnit>
+<startingUnit>Swordwrath</startingUnit>
+</player>
+
+<oponent race="Order" statueHealth="700">
+<raceName>Spearton Tribes</raceName>
+<statue>spearton</statue>
+<unit>Spearton</unit>
+<UnitComposition>
+<Spearton>0</Spearton>
+</UnitComposition>
+</oponent>
+</level>
+
+<level title="Blot out the sun: Archidons Declare War" number="3" map="4" story="The Archidon Empire wants revenge and their land back.  They have declared war against your Empire." controller="CampaignArcher" points="2">
+
 <normal>1.8</normal>
 <hard>1.4</hard>
 <insane>.7</insane>
@@ -54,7 +81,7 @@
 
 </level>
 
-<level title="Silent Assassins: Ninjas Declare War" number="3" map="5" story="When the nations fled your control , some of the more cunning Swordwrath managed to escape and rebuild. They trained themselves into a new breed of Swordwrath more intelligent and skilled. This new race is called Shadowrath. " controller="CampaignShadow" points="1">
+<level title="Silent Assassins: Ninjas Declare War" number="4" map="5" story="When the nations fled your control , some of the more cunning Swordwrath managed to escape and rebuild. They trained themselves into a new breed of Swordwrath more intelligent and skilled. This new race is called Shadowrath. " controller="CampaignShadow" points="2">
 
 <unlock>Archidon</unlock>
 <normal>1.7</normal>
@@ -89,9 +116,37 @@
 </oponent>
 </level>
 
-<level title="Magic in the Air: Wizards and monks Declare War " number="4" map="2" story="The Rebel Magikill have trained the women of their empire in the art of magic, creating powerful Merics with the ability to heal and cure." controller="" points="1">
-<hasInsaneWall>true</hasInsaneWall>
+<level title="Ambush: Shadowrath Stalkers" number="5" map="5" story="The Shadowrath do not accept defeat easily. As your army marches onward, assassins stalk the road and strike from the dark." controller="CampaignAmbush" points="1">
 <unlock>Ninja</unlock>
+<normal>1.7</normal>
+<hard>1.35</hard>
+<insane>.8</insane>
+<normalHealthScale>.45</normalHealthScale>
+<tip>Tip: Keep your army together and stall as much as you can. Shadowrath are dangerous when they isolate your units.</tip>
+
+<player race="Order" statueHealth="1200">
+<unit>Swordwrath</unit>
+<unit>Spearton</unit>
+<unit>Archidon</unit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Archidon</startingUnit>
+<startingUnit>Spearton</startingUnit>
+</player>
+
+<oponent race="Order" statueHealth="1000">
+<raceName>Shadowrath Stalkers</raceName>
+<statue>swordwrath</statue>
+<unit>Ninja</unit>
+<UnitComposition>
+<Ninja>16</Ninja>
+</UnitComposition>
+</oponent>
+</level>
+
+<level title="Magic in the Air: Wizards and monks Declare War " number="6" map="2" story="The Rebel Magikill have trained the women of their empire in the art of magic, creating powerful Merics with the ability to heal and cure." controller="" points="2">
+<hasInsaneWall>true</hasInsaneWall>
 <normal>1.7</normal>
 <hard>1.6</hard>
 <insane>.9</insane>
@@ -128,7 +183,7 @@
 </oponent>
 </level>
 
-<level title="Rebels United" number="4" map="1" story="All rebels armys join together to crush the Order Empire." controller="" points="1">
+<level title="Rebels United" number="7" map="1" story="All rebels armys join together to crush the Order Empire." controller="" points="2">
 <hasInsaneWall>true</hasInsaneWall>
 <unlock>Magikill</unlock>
 <unlock>Monk</unlock>
@@ -183,7 +238,54 @@
 </oponent>
 </level>
 
-<level title="Massive Battle" number="6" map="3" story="Sometimes what seems like the end is merely the beginning of the end." controller="CampaignCutScene1" points="1">
+<level title="Ambush: Rebels Last Stand" number="8" map="3" story="The remaining rebels have gathered to send everything they have at you." controller="CampaignAmbush" points="0">
+<hasInsaneWall>true</hasInsaneWall>
+<normal>1.65</normal>
+<hard>1.35</hard>
+<insane>.85</insane>
+<normalHealthScale>.55</normalHealthScale>
+<normalDamageScale>.8</normalDamageScale>
+<tip>Tip: Defend until their ambush loses momentum.</tip>
+
+<player race="Order" statueHealth="1500">
+<unit>Swordwrath</unit>
+<unit>Spearton</unit>
+<unit>Archidon</unit>
+<unit>Ninja</unit>
+<unit>Magikill</unit>
+<unit>Monk</unit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Spearton</startingUnit>
+<startingUnit>Spearton</startingUnit>
+<startingUnit>Shadowrath</startingUnit>
+<startingUnit>Monk</startingUnit>
+</player>
+
+<oponent race="Order" statueHealth="1400">
+<raceName>Rebel Army</raceName>
+<unit>Spearton</unit>
+<unit>Archer</unit>
+<unit>Ninja</unit>
+<unit>Magikill</unit>
+<unit>Monk</unit>
+<unit>Swordwrath</unit>
+<UnitComposition>
+<Spearton>2</Spearton>
+<Archer>2</Archer>
+<Ninja>1</Ninja>
+<Magikill>0</Magikill>
+<Monk>1</Monk>
+<Swordwrath>1</Swordwrath>
+</UnitComposition>
+</oponent>
+</level>
+
+<level title="Massive Battle" number="9" map="3" story="Sometimes what seems like the end is merely the beginning of the end." controller="CampaignCutScene1" points="1">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.75</normal>
 <hard>.95</hard>
@@ -217,7 +319,7 @@
 </oponent>
 </level>
 
-<level title="Explosive War: Bombers Attack" number="7" map="2" story="Medusa vows to whipe Order Empire out of Inamorta.  Her first display of power is to  send some of her minion bombers and Giants  to destroy you." controller="CampaignBomber" points="1">
+<level title="Explosive War: Bombers Attack" number="10" map="2" story="Medusa vows to whipe Order Empire out of Inamorta.  Her first display of power is to  send some of her minion bombers and Giants  to destroy you." controller="CampaignBomber" points="1">
 <hasInsaneWall>true</hasInsaneWall>
 <unlock>EnslavedGiant</unlock>
 <normal>1.6</normal>
@@ -264,7 +366,7 @@
 </oponent>
 </level>
 
-<level title="The Night is Dark: Juggerknights Attack" number="8" map="3" story="Medusa unleashes her most ferocious heavily armored infantry." controller="CampaignKnight" points="1">
+<level title="The Night is Dark: Juggerknights Attack" number="11" map="3" story="Medusa unleashes her most ferocious heavily armored infantry." controller="CampaignKnight" points="2">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.7</normal>
 <hard>1.4</hard>
@@ -310,7 +412,7 @@
 </oponent>
 </level>
 
-<level title="Undead War: Deadly Deads Attack" number="9" map="2" story="Medusa attacks by revealing the Deads, an undead zombie that throws their own poisonous body parts." controller="CampaignDeads" points="1">
+<level title="Undead War: Deadly Deads Attack" number="12" map="2" story="Medusa attacks by revealing the Deads, an undead zombie that throws their own poisonous body parts." controller="CampaignDeads" points="1">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.8</normal>
 <hard>1.4</hard>
@@ -355,7 +457,45 @@
 </oponent>
 </level>
 
-<level title=" 4 legged Fury: Crawlers Attack" number="10" map="4" story="Medusa Unleashes the Crawlers, a fast assassin that becomes more powerful in a pack." controller="" points="1">
+<level title="Ambush: Dead Horde" number="13" map="2" story="The Deads do not march like soldiers. They pour across the battlefield in a poisoned horde." controller="CampaignAmbush" points="0">
+<normal>1.6</normal>
+<hard>1.3</hard>
+<insane>.85</insane>
+<normalHealthScale>.55</normalHealthScale>
+<normalDamageScale>.8</normalDamageScale>
+<tip>Tip: The horde is large, but fragile. Use ranged units and garrison injured troops.</tip>
+
+<player race="Order" statueHealth="1500">
+<unit>Swordwrath</unit>
+<unit>Spearton</unit>
+<unit>Archidon</unit>
+<unit>Ninja</unit>
+<unit>Magikill</unit>
+<unit>Monk</unit>
+<unit>FlyingCrossbowman</unit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Archidon</startingUnit>
+<startingUnit>Archidon</startingUnit>
+<startingUnit>Spearton</startingUnit>
+</player>
+
+<oponent race="Chaos" statueHealth="1200">
+<raceName>Dead Horde</raceName>
+<unit>Dead</unit>
+<unit>Bomber</unit>
+<startingUnit>Dead</startingUnit>
+<startingUnit>Dead</startingUnit>
+<startingUnit>Dead</startingUnit>
+<UnitComposition>
+<Dead>32</Dead>
+<Bomber>4</Bomber>
+</UnitComposition>
+</oponent>
+</level>
+
+<level title=" 4 legged Fury: Crawlers Attack" number="14" map="4" story="Medusa Unleashes the Crawlers, a fast assassin that becomes more powerful in a pack." controller="" points="1">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.6</normal>
 <hard>1.3</hard>
@@ -398,7 +538,7 @@
 </oponent>
 </level>
 
-<level title="Shadow of the moon: Eclipsors Attack." number="11" map="0" story="Medusa's tricks seem to never end. The Eclipsor is revealed, a flying archer that can only be hit by projectile units." controller="" points="1">
+<level title="Shadow of the moon: Eclipsors Attack." number="15" map="0" story="Medusa's tricks seem to never end. The Eclipsor is revealed, a flying archer that can only be hit by projectile units." controller="" points="2">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.7</normal>
 <hard>1.5</hard>
@@ -447,7 +587,7 @@
 </oponent>
 </level>
 
-<level title="Bone Pile: Marrowkai summon war" number="12" map="2" story="You have mimicked the flight of the Eclipsor and crafted technology to have your own  flying unit that wields a crossbow. Meanwhile a new Chaos Mage, the Marrowkai, is reaping havoc." controller="" points="1">
+<level title="Bone Pile: Marrowkai summon war" number="16" map="2" story="You have mimicked the flight of the Eclipsor and crafted technology to have your own  flying unit that wields a crossbow. Meanwhile a new Chaos Mage, the Marrowkai, is reaping havoc." controller="" points="2">
 <hasInsaneWall>true</hasInsaneWall>
 <unlock>FlyingCrossbowman</unlock>
 <normal>1.65</normal>
@@ -503,7 +643,50 @@
 </oponent>
 </level>
 
-<level title="Medusa's Gates: The Chaos Capital is in sight. " number="13" map="6" story="You are on the outskirts of Medusas homeland.  A final push is near." controller="" points="1">
+<level title="Ambush: Giants and Eclipsors" number="17" map="6" story="Near Medusa's capital, the ground shakes beneath Giants while Eclipsors darken the sky. Medusa is trying to crush the army before it reaches the gates." controller="CampaignAmbush" points="0">
+<hasInsaneWall>true</hasInsaneWall>
+<normal>1.55</normal>
+<hard>1.25</hard>
+<insane>.85</insane>
+<normalHealthScale>.6</normalHealthScale>
+<normalDamageScale>.85</normalDamageScale>
+<tip>Tip: Eclipsors pressure from the air while Giants break the frontline. Bring ranged support.</tip>
+
+<player race="Order" statueHealth="1800">
+<unit>Swordwrath</unit>
+<unit>Spearton</unit>
+<unit>Archidon</unit>
+<unit>Ninja</unit>
+<unit>Magikill</unit>
+<unit>Monk</unit>
+<unit>FlyingCrossbowman</unit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>FlyingCrossbowman</startingUnit>
+<startingUnit>Archidon</startingUnit>
+<startingUnit>Spearton</startingUnit>
+</player>
+
+<oponent race="Chaos" statueHealth="1600">
+<raceName>Giant Eclipsors</raceName>
+<gold>800</gold>
+<mana>300</mana>
+<unit>Giant</unit>
+<unit>Wingadon</unit>
+<unit>Dead</unit>
+<startingUnit>Giant</startingUnit>
+<startingUnit>Wingadon</startingUnit>
+<startingUnit>Wingadon</startingUnit>
+<UnitComposition>
+<Giant>4</Giant>
+<Wingadon>16</Wingadon>
+<Dead>8</Dead>
+</UnitComposition>
+</oponent>
+</level>
+
+<level title="Medusa's Gates: The Chaos Capital is in sight. " number="18" map="6" story="You are on the outskirts of Medusas homeland.  A final push is near." controller="" points="2">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.6</normal>
 <hard>1.4</hard>
@@ -565,7 +748,7 @@
 </oponent>
 </level>
 
-<level title="Medusa and the Full Chaos Empire: Final battle" number="14" map="7" story="You have pushed Medusa and her Chaos Empire back to their Capital. They have no where left to run. Do not hold back! Inamorta is at stake." controller="CampaignCutScene2" points="1">
+<level title="Medusa and the Full Chaos Empire: Final battle" number="19" map="7" story="You have pushed Medusa and her Chaos Empire back to their Capital. They have no where left to run. Do not hold back! Inamorta is at stake." controller="CampaignCutScene2" points="2">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.6</normal>
 <hard>1.4</hard>

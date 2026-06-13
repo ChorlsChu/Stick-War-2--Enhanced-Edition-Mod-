@@ -30,8 +30,12 @@ package com.brockw.stickwar.engine
       public function HealthBar()
       {
          super();
+         this.mouseEnabled = false;
+         this.mouseChildren = false;
          this.blackBars = new Sprite();
          this.redBar = new Sprite();
+         this.blackBars.mouseEnabled = false;
+         this.redBar.mouseEnabled = false;
          addChild(this.redBar);
          addChild(this.blackBars);
          this.isFirst = true;

@@ -32,6 +32,8 @@ package com.brockw.stickwar.engine.units
       private var rageMaxVelocity:Number;
       
       private var lastWasStanding:Boolean;
+
+      private var forcedWeaponSkin:String = "";
       
       public function Swordwrath(game:StickWar)
       {
@@ -88,6 +90,7 @@ package com.brockw.stickwar.engine.units
          this.normalMaxVelocity = _maxVelocity;
          this.rageMaxVelocity = game.xml.xml.Order.Units.swordwrath.rage.rageMaxVelocity;
          this.rageSpell = new SpellCooldown(RAGE_EFFECT,RAGE_COOLDOWN,game.xml.xml.Order.Units.swordwrath.rage.mana);
+         this.forcedWeaponSkin = "";
          _mc.stop();
          _mc.width *= _scale;
          _mc.height *= _scale;
@@ -109,6 +112,12 @@ package com.brockw.stickwar.engine.units
             return 2 * damageToDeal;
          }
          return damageToDeal;
+      }
+
+      public function forceSkin(weapon:String) : void
+      {
+         this.forcedWeaponSkin = weapon;
+         Swordwrath.setItem(_swordwrath(mc),this.forcedWeaponSkin,"","");
       }
       
       override public function update(game:StickWar) : void
@@ -219,7 +228,11 @@ package com.brockw.stickwar.engine.units
             }
             MovieClip(_mc.mc).nextFrame();
          }
-         if(!hasDefaultLoadout)
+         if(this.forcedWeaponSkin != "")
+         {
+            Swordwrath.setItem(_swordwrath(mc),this.forcedWeaponSkin,"","");
+         }
+         else if(!hasDefaultLoadout)
          {
             Swordwrath.setItem(_swordwrath(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),"","");
          }

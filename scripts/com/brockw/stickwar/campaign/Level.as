@@ -86,6 +86,10 @@ package com.brockw.stickwar.campaign
          {
             this.controller = CampaignArcher;
          }
+         else if(controllerName == "CampaignAmbush")
+         {
+            this.controller = CampaignAmbush;
+         }
          this.unlocks = [];
          for each(x in xml.unlock)
          {

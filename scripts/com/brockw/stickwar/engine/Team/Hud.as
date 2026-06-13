@@ -46,7 +46,7 @@ package com.brockw.stickwar.engine.Team
          MovieClip(this.hud.map).graphics.drawRect(width * game.screenX / game.map.width,0,width * game.map.screenWidth / game.map.width,height);
          if(game.fogOfWar.isFogOn)
          {
-            w = width * game.team.getVisionRange() / game.map.width;
+            w = width * game.fogOfWar.getForwardPosition(game) / game.map.width;
             sx = 0;
             if(game.team == game.teamA)
             {

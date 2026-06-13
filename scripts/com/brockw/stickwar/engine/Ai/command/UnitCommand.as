@@ -143,6 +143,8 @@ package com.brockw.stickwar.engine.Ai.command
       
       protected var circleSprite:Sprite;
       
+      private var lastRangeIndicatorSignature:String;
+      
       private var mana:int;
       
       private var gold:int;
@@ -161,6 +163,7 @@ package com.brockw.stickwar.engine.Ai.command
          this._buttonBitmap = actualButtonBitmap;
          this._isActivatable = true;
          this.circleSprite = new Sprite();
+         this.lastRangeIndicatorSignature = null;
       }
       
       protected function loadXML(xmlList:XMLList) : void
@@ -220,6 +223,12 @@ package com.brockw.stickwar.engine.Ai.command
          var unit:Unit = null;
          var topPoint:Number = NaN;
          var bottomPoint:Number = NaN;
+         var signature:String = this.getRangeIndicatorSignature(range,gameScreen);
+         if(signature == this.lastRangeIndicatorSignature)
+         {
+            return;
+         }
+         this.lastRangeIndicatorSignature = signature;
          canvas.addChild(this.circleSprite);
          this.circleSprite.graphics.clear();
          this.circleSprite.graphics.lineStyle(1,16777215,1);
@@ -235,6 +244,20 @@ package com.brockw.stickwar.engine.Ai.command
                this.circleSprite.graphics.curveTo(unit.px - range * unit.team.direction,unit.py,unit.px - bottomPoint * unit.team.direction,gameScreen.game.map.height);
             }
          }
+      }
+      
+      private function getRangeIndicatorSignature(range:Number, gameScreen:GameScreen) : String
+      {
+         var unit:Unit = null;
+         var signature:String = String(range) + ":" + gameScreen.game.map.height + ":" + gameScreen.userInterface.selectedUnits.getSelectedType();
+         for each(unit in gameScreen.userInterface.selectedUnits.selected)
+         {
+            if(unit.type == gameScreen.userInterface.selectedUnits.getSelectedType())
+            {
+               signature += ":" + unit.id + "," + unit.px + "," + unit.py + "," + unit.team.direction;
+            }
+         }
+         return signature;
       }
       
       public function drawCursorPostClick(canvas:Sprite, game:GameScreen) : Boolean
@@ -261,6 +284,7 @@ package com.brockw.stickwar.engine.Ai.command
          }
          this._cursor = null;
          this._pool = null;
+         this.lastRangeIndicatorSignature = null;
       }
       
       public function isEnabled(entity:Entity) : Boolean
@@ -349,6 +373,7 @@ package com.brockw.stickwar.engine.Ai.command
          {
             canvas.removeChild(this.circleSprite);
          }
+         this.lastRangeIndicatorSignature = null;
       }
       
       public function prepareNetworkedMove(gameScreen:GameScreen) : *

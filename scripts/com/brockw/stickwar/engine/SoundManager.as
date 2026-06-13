@@ -108,6 +108,16 @@ package com.brockw.stickwar.engine
       
       public function playSoundInBackground(name:String, startTime:Number = 0) : void
       {
+         this.playSoundInBackgroundWithLoop(name,startTime,true);
+      }
+
+      public function playSoundInBackgroundOnce(name:String, startTime:Number = 0) : void
+      {
+         this.playSoundInBackgroundWithLoop(name,startTime,false);
+      }
+
+      private function playSoundInBackgroundWithLoop(name:String, startTime:Number, shouldLoop:Boolean) : void
+      {
          if(name == this.currentBackgroundName && startTime == 0)
          {
             return;
@@ -121,7 +131,8 @@ package com.brockw.stickwar.engine
             return;
          }
          var s:Sound = new this.sounds[name]();
-         this.backgroundLoop = s.play(startTime,int.MAX_VALUE);
+         var loopCount:int = shouldLoop ? int.MAX_VALUE : 0;
+         this.backgroundLoop = s.play(startTime,loopCount);
          var transform:SoundTransform = new SoundTransform();
          transform.volume = this.backgroundVolume;
          this.backgroundLoop.soundTransform = transform;

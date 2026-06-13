@@ -95,6 +95,8 @@ package com.brockw.stickwar.engine.units
       private var bossImmediateSpecialReady:Boolean;
 
       private var bossNeedsSpecialReset:Boolean;
+
+      private var bossCautiousPhaseDisabled:Boolean;
       
       public function Ninja(game:StickWar)
       {
@@ -121,6 +123,7 @@ package com.brockw.stickwar.engine.units
          this.bossCloakWasActive = false;
          this.bossImmediateSpecialReady = false;
          this.bossNeedsSpecialReset = false;
+         this.bossCautiousPhaseDisabled = false;
       }
       
       public static function setItemForMc(mc:MovieClip, weapon:String, armor:String, misc:String) : void
@@ -700,6 +703,16 @@ package com.brockw.stickwar.engine.units
       public function get bossIsRetreating() : Boolean
       {
          return this._bossIsRetreating;
+      }
+
+      public function disableBossCautiousPhase() : void
+      {
+         this.bossCautiousPhaseDisabled = true;
+      }
+
+      public function get isBossCautiousPhaseDisabled() : Boolean
+      {
+         return this.bossCautiousPhaseDisabled;
       }
 
       public function startBossEmergencySortie() : void

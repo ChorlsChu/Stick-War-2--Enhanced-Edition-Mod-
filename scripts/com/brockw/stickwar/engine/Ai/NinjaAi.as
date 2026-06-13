@@ -23,11 +23,15 @@ package com.brockw.stickwar.engine.Ai
 
       private static const BOSS_OPENER_TRIGGER_RANGE:Number = 500;
 
+      private static const BOSS_ENEMY_BASE_RADIUS:Number = 650;
+
       private static const BOSS_HEALER_ANCHOR_X:Number = 90;
 
       private static const BOSS_HEALER_ANCHOR_Y:Number = 60;
 
       private static const BOSS_ASSASSIN_STRIKE_OFFSET:Number = 20;
+
+      private static const BOSS_ASSASSIN_BACK_STRIKE_OFFSET:Number = 95;
 
       private static const BOSS_SPECIAL_RESET_DISTANCE:Number = 260;
 
@@ -127,11 +131,21 @@ package com.brockw.stickwar.engine.Ai
             Ninja(unit).isBossMovementLocked = false;
             if(Ninja(unit).shouldBossRetreat())
             {
-               Ninja(unit).startBossRetreat();
-               this.clearBossHealerTarget();
-               this.bossNeedsHealerRefresh = true;
-               this.bossSpecialAbortFrames = 0;
-               this.resetBossGarrisonRetreat();
+               if(Ninja(unit).isBossCautiousPhaseDisabled || this.isEnemyPlayerDefendingBase())
+               {
+                  Ninja(unit).enterBossFinalStand();
+                  this.clearBossHealerTarget();
+                  this.bossSpecialAbortFrames = 0;
+                  this.resetBossGarrisonRetreat();
+               }
+               else
+               {
+                  Ninja(unit).startBossRetreat();
+                  this.clearBossHealerTarget();
+                  this.bossNeedsHealerRefresh = true;
+                  this.bossSpecialAbortFrames = 0;
+                  this.resetBossGarrisonRetreat();
+               }
             }
             if(Ninja(unit).bossIsRetreating)
             {
@@ -365,7 +379,7 @@ package com.brockw.stickwar.engine.Ai
             unit.attack();
             return true;
          }
-         strikeX = target is Statue ? target.px - target.team.direction * 90 : target.px - target.team.direction * BOSS_ASSASSIN_STRIKE_OFFSET;
+         strikeX = target is Statue ? target.px - target.team.direction * 90 : target.px - target.team.direction * this.getBossStrikeOffset(target);
          strikeY = target.py;
          closeToStrike = Math.abs(unit.px - strikeX) < 8 && Math.abs(unit.py - strikeY) < 8;
          if(closeToStrike)
@@ -381,6 +395,15 @@ package com.brockw.stickwar.engine.Ai
          unit.walk((strikeX - unit.px) / 60,(strikeY - unit.py) / 60,Util.sgn(target.px - unit.px));
          unit.faceDirection(target.px - unit.px);
          return true;
+      }
+
+      private function getBossStrikeOffset(target:Unit) : Number
+      {
+         if(target is Archer)
+         {
+            return BOSS_ASSASSIN_BACK_STRIKE_OFFSET;
+         }
+         return BOSS_ASSASSIN_STRIKE_OFFSET;
       }
 
       private function tryBossAssassinSquadMovement() : Boolean
@@ -692,6 +715,23 @@ package com.brockw.stickwar.engine.Ai
          return target != null && target.isAlive() && Math.abs(target.px - unit.px) < BOSS_OPENER_TRIGGER_RANGE;
       }
 
+      private function isEnemyPlayerDefendingBase() : Boolean
+      {
+         var enemy:Unit = null;
+         if(unit.team == null || unit.team.enemyTeam == null || unit.team.enemyTeam.statue == null)
+         {
+            return false;
+         }
+         for each(enemy in unit.team.enemyTeam.units)
+         {
+            if(enemy != null && enemy.isAlive() && !enemy.isGarrisoned && enemy.type != Unit.U_STATUE && enemy.type != Unit.U_MINER && enemy.type != Unit.U_CHAOS_MINER && Math.abs(enemy.px - unit.team.enemyTeam.statue.px) <= BOSS_ENEMY_BASE_RADIUS)
+            {
+               return true;
+            }
+         }
+         return false;
+      }
+
       private function updateBossCautious(game:StickWar, statueDamagedThisFrame:Boolean) : Boolean
       {
          var healer:Monk = this.getBossHealingTarget();
@@ -707,9 +747,12 @@ package com.brockw.stickwar.engine.Ai
             this.finishBossCautiousRecovery(game);
             return false;
          }
-         if(statueDamagedThisFrame && unit.isGarrisoned)
+         if(statueDamagedThisFrame)
          {
-            unit.ungarrison();
+            if(unit.isGarrisoned)
+            {
+               unit.ungarrison();
+            }
             Ninja(unit).enterBossFinalStand();
             this.clearBossHealerTarget();
             this.bossSpecialAbortFrames = 0;

@@ -120,6 +120,7 @@ package com.brockw.stickwar.engine.Ai
                this.finishSpellCommand(game);
                return;
             }
+            this.updateSpellCommandTargetPosition(game);
             if(!currentCommand.inRange(unit))
             {
                unit.mayWalkThrough = true;
@@ -152,6 +153,22 @@ package com.brockw.stickwar.engine.Ai
             }
             baseUpdate(game);
          }
+      }
+
+      private function updateSpellCommandTargetPosition(game:StickWar) : void
+      {
+         var target:Unit = null;
+         if(currentCommand.targetId == -1 || !(currentCommand.targetId in game.units) || !(game.units[currentCommand.targetId] is Unit))
+         {
+            return;
+         }
+         target = Unit(game.units[currentCommand.targetId]);
+         if(target == null || !target.isAlive() || target.team == null || target.team.id == unit.team.id || !target.isTargetable())
+         {
+            return;
+         }
+         currentCommand.realX = target.px;
+         currentCommand.realY = target.py;
       }
 
       private function tryReaperControlSpell(game:StickWar, magikill:Magikill) : Boolean
@@ -494,6 +511,7 @@ package com.brockw.stickwar.engine.Ai
          var nukeTarget:Unit = null;
          var stunTarget:Unit = null;
          var poisonTarget:Unit = null;
+         var directTarget:Unit = null;
          var totalWeight:int = 0;
          var roll:int = 0;
          if(unit.team == null || unit.team.isAi || unit.isGarrisoned || unit.isBusy())
@@ -519,10 +537,18 @@ package com.brockw.stickwar.engine.Ai
             this.tryStartAutoSpell(game,this.nukeCommand,magikill.nukeCooldown(),this.getAutoCastTargetForSpell(game,this.nukeCommand,defendMode,defendTarget));
             return;
          }
+         directTarget = this.getDirectAutoCastTarget(game);
          nukeReady = this.isSpellReadyForAutoCast(game,this.nukeCommand,magikill.nukeCooldown());
          stunReady = unit.team.tech.isResearched(Tech.MAGIKILL_WALL) && this.isSpellReadyForAutoCast(game,this.stunCommand,magikill.stunCooldown());
          poisonReady = unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && this.isSpellReadyForAutoCast(game,this.poisonDartCommand,magikill.poisonDartCooldown());
-         sharedTarget = this.getSharedAutoCastTarget(game,defendMode,defendTarget,nukeReady,stunReady,poisonReady);
+         if(directTarget != null)
+         {
+            sharedTarget = directTarget;
+         }
+         else
+         {
+            sharedTarget = this.getSharedAutoCastTarget(game,defendMode,defendTarget,nukeReady,stunReady,poisonReady);
+         }
          nukeTarget = nukeReady ? sharedTarget : null;
          stunTarget = stunReady ? sharedTarget : null;
          poisonTarget = poisonReady ? sharedTarget : null;
@@ -635,6 +661,21 @@ package com.brockw.stickwar.engine.Ai
             return null;
          }
          return this.getNearestEnemyTarget(command,false);
+      }
+
+      private function getDirectAutoCastTarget(game:StickWar) : Unit
+      {
+         if(currentCommand.targetId in game.units)
+         {
+            if(game.units[currentCommand.targetId] is Unit)
+            {
+               if(this.isDirectAutoCastTarget(Unit(game.units[currentCommand.targetId])))
+               {
+                  return Unit(game.units[currentCommand.targetId]);
+               }
+            }
+         }
+         return null;
       }
 
       private function isDirectAutoCastTarget(target:Unit) : Boolean

@@ -184,6 +184,8 @@ package com.brockw.stickwar.engine.Team
 
       private var _armyChangeVersion:int;
       
+      public var createTimeMultiplier:Number;
+      
       public function Team(game:StickWar)
       {
          super();
@@ -229,6 +231,7 @@ package com.brockw.stickwar.engine.Team
          this._damageModifier = 1;
          this._originalType = 0;
          this._armyChangeVersion = 0;
+         this.createTimeMultiplier = 1;
       }
       
       public static function getTeamFromId(id:int, game:StickWar, health:int, techAllowed:Dictionary, handicap:* = 1, healthModifier:Number = 1) : Team
@@ -676,9 +679,9 @@ package com.brockw.stickwar.engine.Team
          }
          if(this.hasActiveCommanderTrainingAura(unit.type))
          {
-            return unit.createTime * 0.7;
+            return unit.createTime * 0.7 * this.createTimeMultiplier;
          }
-         return unit.createTime;
+         return unit.createTime * this.createTimeMultiplier;
       }
 
       private function hasActiveCommanderTrainingAura(unitType:int) : Boolean
@@ -990,6 +993,10 @@ package com.brockw.stickwar.engine.Team
       
       public function spawn(unit:Unit, game:StickWar) : void
       {
+         if(unit == null || game == null || unit.mc == null)
+         {
+            return;
+         }
          unit.isTowerSpawned = false;
          unit.forceTowerSpawnVisual = false;
          unit.suppressTowerSpawnVisual = false;
@@ -1036,6 +1043,8 @@ package com.brockw.stickwar.engine.Team
          unit.x = -100;
          unit.y = -100;
          unit.init(game);
+         unit.healthBar.totalHealth = unit.maxHealth;
+         unit.healthBar.health = unit.health;
          unit.healthBar.reset();
          this.units.push(unit);
          game.battlefield.addChildAt(unit,0);

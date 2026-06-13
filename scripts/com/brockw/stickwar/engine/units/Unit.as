@@ -35,6 +35,12 @@ package com.brockw.stickwar.engine.units
       
       private static const COLLISION_DAMPNING:Number = 0.6;
       
+      private static const ORIGIN_POINT:Point = new Point(0,0);
+      
+      private static const HEALTH_HEAL_POINT:Point = new Point(0,40);
+      
+      private static const HEALTH_CURE_POINT:Point = new Point(0,-40);
+      
       public static const U_MINER:int = 1;
       
       public static const U_MAGIKILL:int = 2;
@@ -734,7 +740,7 @@ package com.brockw.stickwar.engine.units
       
       override public function onMap(game:StickWar) : Boolean
       {
-         return !game.fogOfWar.isFogOn || this.team == game.team || game.team.getVisionRange() * game.team.direction > px * game.team.direction;
+         return !game.fogOfWar.isFogOn || this.team == game.team || game.fogOfWar.getForwardPosition(game) * game.team.direction > px * game.team.direction;
       }
       
       override public function onScreen(game:StickWar) : Boolean
@@ -743,7 +749,7 @@ package com.brockw.stickwar.engine.units
          {
             return true;
          }
-         if(this.team != game.team && game.team.getVisionRange() * game.team.direction < px * game.team.direction)
+         if(this.team != game.team && game.fogOfWar.getForwardPosition(game) * game.team.direction < px * game.team.direction)
          {
             return false;
          }
@@ -840,7 +846,9 @@ package com.brockw.stickwar.engine.units
          this._healAmount = amount;
          if(this.health != this.maxHealth && this.team.game.frame - this.lastHealthAnimation > 30)
          {
-            p = this.healthBar.localToGlobal(new Point(0,40));
+            HEALTH_HEAL_POINT.x = 0;
+            HEALTH_HEAL_POINT.y = 40;
+            p = this.healthBar.localToGlobal(HEALTH_HEAL_POINT);
             p = this.team.game.battlefield.globalToLocal(p);
             this.team.game.projectileManager.initHealEffect(x,p.y,py,this.team,this);
             this.lastHealthAnimation = this.team.game.frame;
@@ -1181,7 +1189,9 @@ package com.brockw.stickwar.engine.units
          var p:Point = null;
          if(this.poisonDamage != 0)
          {
-            p = this.healthBar.localToGlobal(new Point(0,-40));
+            HEALTH_CURE_POINT.x = 0;
+            HEALTH_CURE_POINT.y = -40;
+            p = this.healthBar.localToGlobal(HEALTH_CURE_POINT);
             p = this.team.game.battlefield.globalToLocal(p);
             this.team.game.projectileManager.initHealEffect(x,p.y,py,this.team,this,true);
             this.lastHealthAnimation = this.team.game.frame;
@@ -1487,7 +1497,9 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         var p1:Point = MovieClip(this._mc.mc.tip).localToGlobal(new Point(0,0));
+         ORIGIN_POINT.x = 0;
+         ORIGIN_POINT.y = 0;
+         var p1:Point = MovieClip(this._mc.mc.tip).localToGlobal(ORIGIN_POINT);
          if(target.checkForHitPoint(p1,target))
          {
             target.damage(0,this.damageToDeal,this);

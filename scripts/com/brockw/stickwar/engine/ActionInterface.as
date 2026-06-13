@@ -198,6 +198,8 @@ package com.brockw.stickwar.engine
          var t:TechItem = null;
          var c:UnitCommand = null;
          var candidate:UnitCommand = null;
+         var stageMouseX:Number = gameScreen.stage.mouseX;
+         var stageMouseY:Number = gameScreen.stage.mouseY;
          for(i = 0; i < gameScreen.game.postCursors.length; i++)
          {
             m = gameScreen.game.postCursors[i];
@@ -279,7 +281,7 @@ package com.brockw.stickwar.engine
             {
                MovieClip(this.actionsToButtonMap[this._currentMove.type]).alpha = 0.2;
             }
-            if(gameScreen.userInterface.mouseState.mouseDown && this.stage.mouseY <= 700 - 75)
+            if(gameScreen.userInterface.mouseState.mouseDown && stageMouseY <= 700 - 75)
             {
                if(this._currentMove.type != UnitCommand.MOVE && gameScreen.userInterface.mouseState.isRightClick == true)
                {
@@ -287,7 +289,7 @@ package com.brockw.stickwar.engine
                   gameScreen.userInterface.mouseState.mouseDown = false;
                   gameScreen.userInterface.mouseState.isRightClick = false;
                }
-               else if(!(this._currentMove.type == UnitCommand.MOVE && gameScreen.userInterface.mouseState.isRightClick != true && this.stage.mouseY > 700 - 125))
+               else if(!(this._currentMove.type == UnitCommand.MOVE && gameScreen.userInterface.mouseState.isRightClick != true && stageMouseY > 700 - 125))
                {
                   if(!(gameScreen.userInterface.mouseState.isRightClick == false && gameScreen.userInterface.keyBoardState.isShift))
                   {
@@ -338,11 +340,11 @@ package com.brockw.stickwar.engine
                if(this.currentActions[action] < 0)
                {
                   t = this.team.tech.upgrades[this.currentActions[action]];
-                  if(MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,true))
+                  if(MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(stageMouseX,stageMouseY,true))
                   {
                      gameScreen.game.team.updateButtonOver(gameScreen.game,t.name,t.tip,t.researchTime,t.cost,t.mana,0);
                   }
-                  if(gameScreen.userInterface.keyBoardState.isDownForAction(t.hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
+                  if(gameScreen.userInterface.keyBoardState.isDownForAction(t.hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(stageMouseX,stageMouseY,false))
                   {
                      MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
                      c = new TechCommand(gameScreen.game);
@@ -358,7 +360,7 @@ package com.brockw.stickwar.engine
                }
                else
                {
-                  if(MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
+                  if(MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(stageMouseX,stageMouseY,false))
                   {
                      if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
                      {
@@ -405,7 +407,7 @@ package com.brockw.stickwar.engine
                   if(UnitCommand(this.actions[this.currentActions[action]]).isActivatable)
                   {
                      candidate = UnitCommand(this.actions[this.currentActions[action]]);
-                     if(gameScreen.userInterface.keyBoardState.isDownForAction(UnitCommand(this.actions[this.currentActions[action]]).hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
+                     if(gameScreen.userInterface.keyBoardState.isDownForAction(UnitCommand(this.actions[this.currentActions[action]]).hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(stageMouseX,stageMouseY,false))
                      {
                         gameScreen.userInterface.mouseState.clicked = false;
                         if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)

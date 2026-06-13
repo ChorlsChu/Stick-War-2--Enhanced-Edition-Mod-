@@ -27,6 +27,10 @@ package com.brockw.stickwar.engine
       internal var xPos:Number;
       
       public var isFogOn:Boolean;
+
+      public var isForwardPositionLocked:Boolean;
+
+      public var lockedForwardPosition:Number;
       
       private var blockMc:MovieClip;
       
@@ -35,6 +39,8 @@ package com.brockw.stickwar.engine
          super();
          this.xPos = 0;
          this.isFogOn = true;
+         this.isForwardPositionLocked = false;
+         this.lockedForwardPosition = 0;
          this.fog = new _fog();
          this.fog.y = 0;
          this.setTint(this.fog,0,0.9);
@@ -63,6 +69,10 @@ package com.brockw.stickwar.engine
       public function update(game:StickWar) : void
       {
          var forwardPosition:* = game.team.getVisionRange();
+         if(this.isForwardPositionLocked)
+         {
+            forwardPosition = this.lockedForwardPosition;
+         }
          if(!this.isFogOn)
          {
             this.alpha = 0;
@@ -130,6 +140,32 @@ package com.brockw.stickwar.engine
                this.fogLowQuality.x = Math.min(this.xPos,game.screenX + game.map.screenWidth);
             }
          }
+      }
+
+      public function forceForwardPosition(value:Number) : void
+      {
+         this.xPos = value;
+      }
+
+      public function getForwardPosition(game:StickWar) : Number
+      {
+         if(this.isForwardPositionLocked)
+         {
+            return this.lockedForwardPosition;
+         }
+         return game.team.getVisionRange();
+      }
+
+      public function lockForwardPosition(value:Number) : void
+      {
+         this.isForwardPositionLocked = true;
+         this.lockedForwardPosition = value;
+         this.xPos = value;
+      }
+
+      public function unlockForwardPosition() : void
+      {
+         this.isForwardPositionLocked = false;
       }
    }
 }

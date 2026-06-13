@@ -76,6 +76,12 @@ package com.brockw.stickwar.engine.units
       private var bossLastNormalAttackFrame:int;
       
       private var bossShieldSlamStunTime:int;
+
+      private var forcedWeaponSkin:String = "";
+      
+      private var forcedArmorSkin:String = "";
+      
+      private var forcedMiscSkin:String = "";
       
       public function Spearton(game:StickWar)
       {
@@ -147,6 +153,9 @@ package com.brockw.stickwar.engine.units
          this.bossCommandedShieldBash = false;
          this.bossLastNormalAttackFrame = -999999;
          this.bossShieldSlamStunTime = game.xml.xml.Chaos.Units.knight.charge.stun;
+         this.forcedWeaponSkin = "";
+         this.forcedArmorSkin = "";
+         this.forcedMiscSkin = "";
          MovieClip(_mc.mc.gotoAndPlay(1));
          MovieClip(_mc.gotoAndStop(1));
          drawShadow();
@@ -173,6 +182,14 @@ package com.brockw.stickwar.engine.units
          {
             this.isShieldBashing = true;
          }
+      }
+
+      public function forceSkin(weapon:String, armor:String, misc:String) : void
+      {
+         this.forcedWeaponSkin = weapon;
+         this.forcedArmorSkin = armor;
+         this.forcedMiscSkin = misc;
+         Spearton.setItem(_speartonMc(mc),this.forcedWeaponSkin,this.forcedArmorSkin,this.forcedMiscSkin);
       }
 
       public function bossShieldBash() : void
@@ -350,7 +367,11 @@ package com.brockw.stickwar.engine.units
          {
             Util.animateMovieClip(_mc);
          }
-         if(this.isBoss)
+         if(this.forcedWeaponSkin != "" || this.forcedArmorSkin != "" || this.forcedMiscSkin != "")
+         {
+            Spearton.setItem(_speartonMc(mc),this.forcedWeaponSkin,this.forcedArmorSkin,this.forcedMiscSkin);
+         }
+         else if(this.isBoss)
          {
             Spearton.setItem(_speartonMc(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
          }

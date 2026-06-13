@@ -11,6 +11,8 @@ package com.brockw.stickwar.engine.projectile
    
    public class ProjectileManager
    {
+      private static const CLEANUP_PER_FRAME:int = 15;
+      
       private static const NUKE_VISUAL_CLUSTER_RADIUS:Number = 40;
       
       private static const NUKE_VISUAL_CLUSTER_WINDOW_FRAMES:int = 3;
@@ -414,7 +416,7 @@ package com.brockw.stickwar.engine.projectile
          {
             return;
          }
-         n.visible = true;
+         n.resetForUse();
          if(Math.abs(x - unit.x) > unit.team.game.xml.xml.Order.Units.magikill.electricWall.range)
          {
             x = -unit.team.game.xml.xml.Order.Units.magikill.electricWall.area / 2 + unit.x + Util.sgn(x - unit.x) * unit.team.game.xml.xml.Order.Units.magikill.electricWall.range;
@@ -709,7 +711,7 @@ package com.brockw.stickwar.engine.projectile
          var readIndex:int = 0;
          var writeIndex:int = 0;
          var waitingLength:int = 0;
-         var readyForCleanupCount:int = 0;
+         var cleanedCount:int = 0;
          var p:Projectile = null;
          var effect:MovieClip = null;
          for(readIndex = 0; readIndex < this.projectiles.length; readIndex++)
@@ -729,25 +731,27 @@ package com.brockw.stickwar.engine.projectile
          }
          this.projectiles.length = writeIndex;
          waitingLength = this._waitingToBeCleaned.length;
+         writeIndex = 0;
          for(readIndex = 0; readIndex < waitingLength; readIndex++)
          {
             p = this._waitingToBeCleaned[readIndex];
             ++p.framesDead;
-            if(readyForCleanupCount == readIndex && Boolean(p.isReadyForCleanup()))
+            if(cleanedCount < CLEANUP_PER_FRAME && Boolean(p.isReadyForCleanup()))
             {
                if(game.battlefield.contains(p))
                {
                   game.battlefield.removeChild(p);
                }
                this._projectileMap[p.type].returnItem(p);
-               ++readyForCleanupCount;
+               ++cleanedCount;
+            }
+            else
+            {
+               this._waitingToBeCleaned[writeIndex] = p;
+               ++writeIndex;
             }
          }
-         for(readIndex = readyForCleanupCount; readIndex < waitingLength; readIndex++)
-         {
-            this._waitingToBeCleaned[readIndex - readyForCleanupCount] = this._waitingToBeCleaned[readIndex];
-         }
-         this._waitingToBeCleaned.length = waitingLength - readyForCleanupCount;
+         this._waitingToBeCleaned.length = writeIndex;
          writeIndex = 0;
          for(readIndex = 0; readIndex < this.poisonFistEffects.length; readIndex++)
          {

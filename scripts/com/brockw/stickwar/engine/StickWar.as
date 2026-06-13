@@ -394,7 +394,6 @@ package com.brockw.stickwar.engine
          var mouseX:Number = NaN;
          var mouseY:Number = NaN;
          var isVisible:Boolean = false;
-         var skipMouseHover:Boolean = false;
          this.teamA.updateStatue();
          this.teamB.updateStatue();
          if(this.showGameOverAnimation)
@@ -412,7 +411,6 @@ package com.brockw.stickwar.engine
          this.mouseOverUnit = null;
          this._incomeDisplay.update(this);
          var gameScreen:GameScreen = GameScreen(screen);
-         skipMouseHover = gameScreen.userInterface != null && gameScreen.userInterface.isMouseEdgeScrolling && !gameScreen.userInterface.mouseState.mouseDown && !gameScreen.userInterface.mouseState.clicked;
          this._rain.update(this);
          if(this.teamA.statue.health <= 0)
          {
@@ -440,7 +438,7 @@ package com.brockw.stickwar.engine
          this.wallHitPoint.x = mouseX;
          this.wallHitPoint.y = mouseY;
          this.team.enemyTeam.statue.mouseIsOver = false;
-         if(!skipMouseHover && this.team.enemyTeam.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.enemyTeam.statue))
+         if(this.team.enemyTeam.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.enemyTeam.statue))
          {
             this.mouseOverUnit = this.team.enemyTeam.statue;
          }
@@ -459,7 +457,7 @@ package com.brockw.stickwar.engine
             if(isVisible)
             {
                unitObj.mouseIsOver = false;
-               if(!skipMouseHover && Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
+               if(Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
                {
                   if(this.determineIfBetterSelection(unitObj))
                   {
@@ -483,7 +481,7 @@ package com.brockw.stickwar.engine
             if(isVisible)
             {
                unitObj.mouseIsOver = false;
-               if(!skipMouseHover && Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
+               if(Boolean(unitObj.mc.mc.hitTestPoint(mouseX,mouseY,false)))
                {
                   if(this.determineIfBetterSelection(unitObj))
                   {
@@ -495,7 +493,7 @@ package com.brockw.stickwar.engine
          for(gold in this.map.gold)
          {
             Entity(this.map.gold[gold]).mouseIsOver = false;
-            if(!skipMouseHover && (Gold(this.map.gold[gold]).frontOre.hitTestPoint(mouseX,mouseY,true) || Gold(this.map.gold[gold]).ore.hitTestPoint(mouseX,mouseY,true)))
+            if(Gold(this.map.gold[gold]).frontOre.hitTestPoint(mouseX,mouseY,true) || Gold(this.map.gold[gold]).ore.hitTestPoint(mouseX,mouseY,true))
             {
                if(this.determineIfBetterSelection(Entity(this.map.gold[gold])))
                {
@@ -505,11 +503,11 @@ package com.brockw.stickwar.engine
             Gold(this.map.gold[gold]).update(this);
          }
          this.team.statue.mouseIsOver = false;
-         if(!skipMouseHover && this.team.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.statue))
+         if(this.team.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.statue))
          {
             this.mouseOverUnit = this.team.statue;
          }
-         if(!skipMouseHover && this.mouseOverUnit == null)
+         if(this.mouseOverUnit == null)
          {
             for each(wall in this.team.enemyTeam.walls)
             {

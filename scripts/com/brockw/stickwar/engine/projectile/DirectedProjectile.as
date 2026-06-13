@@ -107,6 +107,11 @@ package com.brockw.stickwar.engine.projectile
       {
          return this._inFlight;
       }
+
+      override public function isReadyForCleanup() : Boolean
+      {
+         return this.framesDead > 45;
+      }
       
       public function get startX() : Number
       {

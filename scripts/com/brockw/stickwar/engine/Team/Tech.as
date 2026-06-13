@@ -138,6 +138,8 @@ package com.brockw.stickwar.engine.Team
       
       private var game:StickWar;
       
+      public var researchTimeMultiplier:Number;
+      
       public function Tech(game:StickWar, team:Team)
       {
          super();
@@ -147,6 +149,7 @@ package com.brockw.stickwar.engine.Team
          this.isDebug = game.xml.xml.debug == 1;
          this.researchingMap = new Object();
          this.toDecrement = [];
+         this.researchTimeMultiplier = 1;
       }
       
       public function update(game:StickWar) : void
@@ -225,7 +228,7 @@ package com.brockw.stickwar.engine.Team
          {
             this.team.gold -= t.cost;
             this.team.mana -= t.mana;
-            this.researchingMap[type] = t.researchTime;
+            this.researchingMap[type] = Math.max(1,int(Math.ceil(t.researchTime * this.researchTimeMultiplier)));
          }
       }
 
