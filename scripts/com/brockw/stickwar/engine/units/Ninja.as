@@ -130,40 +130,25 @@ package com.brockw.stickwar.engine.units
       {
          if(Boolean(mc.ninjahead))
          {
-            if(armor != "")
-            {
-               mc.ninjahead.gotoAndStop(armor);
-            }
+            mc.ninjahead.gotoAndStop(armor == "" ? "default" : armor);
          }
          if(Boolean(mc.ninjastaff))
          {
-            if(weapon != "")
-            {
-               mc.ninjastaff.gotoAndStop(weapon);
-            }
+            mc.ninjastaff.gotoAndStop(weapon == "" ? "default" : weapon);
          }
          if(Boolean(mc.ninjasword))
          {
-            if(misc != "")
-            {
-               mc.ninjasword.gotoAndStop(misc);
-            }
+            mc.ninjasword.gotoAndStop(misc == "" ? "default" : misc);
          }
          if(Boolean(mc.weaponGroup))
          {
             if(Boolean(mc.weaponGroup.ninjastaff))
             {
-               if(weapon != "")
-               {
-                  mc.weaponGroup.ninjastaff.gotoAndStop(weapon);
-               }
+               mc.weaponGroup.ninjastaff.gotoAndStop(weapon == "" ? "default" : weapon);
             }
             if(Boolean(mc.weaponGroup.ninjasword))
             {
-               if(misc != "")
-               {
-                  mc.weaponGroup.ninjasword.gotoAndStop(misc);
-               }
+               mc.weaponGroup.ninjasword.gotoAndStop(misc == "" ? "default" : misc);
             }
          }
       }
@@ -513,7 +498,7 @@ package com.brockw.stickwar.engine.units
          {
             Ninja.setItem(_ninja(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
          }
-         else if(!hasDefaultLoadout)
+         else
          {
             Ninja.setItem(_ninja(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }

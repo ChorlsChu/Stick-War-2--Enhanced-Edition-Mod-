@@ -210,6 +210,7 @@ package com.brockw.stickwar.campaign.controllers
          this.updateRebelBreakAmbush(gameScreen);
          this.updatePendingAttackRefreshes(gameScreen);
          this.updateAmbusherOrders(gameScreen);
+         this.stopSpawnedPlayerUnits(gameScreen);
          this.clampPlayerUnits(gameScreen);
          if(this.isRebelBreakLevel(gameScreen))
          {
@@ -278,6 +279,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          gameScreen.team.tech.isResearchedMap[Tech.MINER_SPEED] = true;
          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.MINER_WALL] = false;
+         CampaignGameScreen(gameScreen).enemyTeamAi.setUnitCreationEnabled(false);
          this.applyRebelBreakDifficultyResearch(gameScreen);
          this.clearEnemyStartingCombatUnits(gameScreen);
       }
@@ -761,13 +763,14 @@ package com.brockw.stickwar.campaign.controllers
          var displayTypes:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH];
          var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
          var i:int = 0;
+         var bossXOffset:int = int(Math.ceil(displayTypes.length / 6));
          for(i = 0; i < displayTypes.length; i++)
          {
             this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(displayTypes[i]),this.getEnemyDisplayX(gameScreen,i,displayTypes.length),this.getDisplayY(gameScreen,i,displayTypes.length),false,false);
          }
          for(i = 0; i < bossTypes.length; i++)
          {
-            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),this.getEnemyDisplayX(gameScreen,i,bossTypes.length) + gameScreen.team.enemyTeam.direction * 260,this.getDisplayY(gameScreen,i,bossTypes.length),true,false);
+            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),this.getEnemyDisplayX(gameScreen,bossXOffset * 6 + i,bossTypes.length),this.getDisplayY(gameScreen,bossXOffset * 6 + i,bossTypes.length),true,false);
          }
       }
 
@@ -840,6 +843,7 @@ package com.brockw.stickwar.campaign.controllers
             chaos = this.spawnDisplayUnit(gameScreen,gameScreen.team,int(chaosTypes[i]),this.getEndingBattleX(gameScreen,i,false),this.getEndingBattleY(gameScreen,i + 3),false,true);
             if(chaos != null)
             {
+               this.tintUnitRed(chaos);
                this.issueDisplayAttackCommand(gameScreen,chaos,this.getEndingBattleX(gameScreen,i,true),chaos.py);
             }
          }
@@ -928,29 +932,30 @@ package com.brockw.stickwar.campaign.controllers
 
       private function getEnemyDisplayX(gameScreen:GameScreen, formationIndex:int, totalCount:int) : Number
       {
-         var column:int = int(formationIndex / 5);
-         var row:int = formationIndex % 5;
-         return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + column * 95 + row * 10);
+         var column:int = int(formationIndex / 6);
+         var row:int = formationIndex % 6;
+         return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + column * 90 + row * 8);
       }
 
       private function getDisplayY(gameScreen:GameScreen, formationIndex:int, totalCount:int) : Number
       {
-         var row:int = formationIndex % 5;
-         var column:int = int(formationIndex / 5);
-         var goalY:Number = gameScreen.game.map.height / 2 + (row - 2) * 55 + (column % 2 == 0 ? -18 : 18);
+         var row:int = formationIndex % 6;
+         var column:int = int(formationIndex / 6);
+         var rowsInColumn:int = Math.min(6,totalCount - column * 6);
+         var goalY:Number = gameScreen.game.map.height / 2 + (row - (rowsInColumn - 1) / 2) * 60 + (column % 2 == 0 ? -15 : 15);
          return Math.max(80,Math.min(gameScreen.game.map.height - 80,goalY));
       }
 
       private function getEndingBattleX(gameScreen:GameScreen, formationIndex:int, rebelSide:Boolean) : Number
       {
-         var spread:Number = (formationIndex % 5) * 55 + int(formationIndex / 5) * 25;
-         var baseOffset:Number = rebelSide ? 420 : 600;
+         var spread:Number = (formationIndex % 5) * 110 + int(formationIndex / 5) * 60;
+         var baseOffset:Number = rebelSide ? 450 : 850;
          return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (baseOffset + spread);
       }
 
       private function getEndingBattleY(gameScreen:GameScreen, formationIndex:int) : Number
       {
-         var offsets:Array = [-115,-55,25,90,-10,130,-85,55,0,110, -130, 75];
+         var offsets:Array = [-145,-75,30,115,-15,160,-110,75,0,140, -165, 95];
          return Math.max(80,Math.min(gameScreen.game.map.height - 80,gameScreen.game.map.height / 2 + Number(offsets[formationIndex % offsets.length])));
       }
 
@@ -1243,9 +1248,9 @@ package com.brockw.stickwar.campaign.controllers
          while(this.rebelDisplayUnits.length > 0)
          {
             unit = this.rebelDisplayUnits.pop() as Unit;
-            if(unit != null && unit.team != null && unit.team.units.indexOf(unit) != -1)
+            if(unit != null && unit.isAlive())
             {
-               unit.team.removeUnitCompletely(unit,gameScreen.game);
+               unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
             }
          }
       }
@@ -1263,9 +1268,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          for each(unit in unitsToKill)
          {
-            unit.health = 0;
-            unit.isDead = true;
-            unit.isDieing = true;
+            unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
          }
       }
 
@@ -1288,6 +1291,22 @@ package com.brockw.stickwar.campaign.controllers
          return gameScreen.team.homeX - gameScreen.team.direction * gameScreen.game.map.screenWidth;
       }
       
+      private function stopSpawnedPlayerUnits(gameScreen:GameScreen) : void
+      {
+         var unit:Unit = null;
+         if(!this.isRebelBreakLevel(gameScreen) || this.rebelEndingStarted)
+         {
+            return;
+         }
+         for each(unit in gameScreen.team.units)
+         {
+            if(unit != null && unit.isAlive() && unit.type != Unit.U_MINER && unit.ai.currentCommand.type == UnitCommand.ATTACK_MOVE && unit.px < gameScreen.team.homeX + gameScreen.team.direction * 200)
+            {
+               this.holdUnit(gameScreen,unit);
+            }
+         }
+      }
+
       private function holdUnit(gameScreen:GameScreen, unit:Unit) : void
       {
          var holdCommand:HoldCommand = null;
@@ -1310,7 +1329,7 @@ package com.brockw.stickwar.campaign.controllers
          snapshot = gameScreen.team.enemyTeam.units.concat();
          for each(unit in snapshot)
          {
-            if(unit != null && unit.type != Unit.U_STATUE && unit.type != Unit.U_MINER && unit.type != Unit.U_CHAOS_MINER && unit.type != Unit.U_CHAOS_TOWER)
+            if(unit != null && unit.type != Unit.U_STATUE && unit.type != Unit.U_CHAOS_TOWER)
             {
                gameScreen.team.enemyTeam.population = Math.max(0,gameScreen.team.enemyTeam.population - unit.population);
                gameScreen.team.enemyTeam.removeUnitCompletely(unit,gameScreen.game);
