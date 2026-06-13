@@ -29,7 +29,7 @@ package com.brockw.stickwar.campaign
    public class CampaignGameScreen extends GameScreen
    {
       
-      private var enemyTeamAi:EnemyTeamAi;
+      public var enemyTeamAi:EnemyTeamAi;
       
       private var controller:CampaignController;
       

@@ -1250,7 +1250,14 @@ package com.brockw.stickwar.campaign.controllers
             unit = this.rebelDisplayUnits.pop() as Unit;
             if(unit != null && unit.isAlive())
             {
-               unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+               if(unit is Magikill && Magikill(unit).isBoss)
+               {
+                  unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+               }
+               else
+               {
+                  unit.team.removeUnitCompletely(unit,gameScreen.game);
+               }
             }
          }
       }
@@ -1258,17 +1265,25 @@ package com.brockw.stickwar.campaign.controllers
       private function killAllEnemyUnits(gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
-         var unitsToKill:Array = [];
-         for each(unit in gameScreen.team.enemyTeam.units)
+         var snapshot:Array = null;
+         if(gameScreen.team == null || gameScreen.team.enemyTeam == null)
          {
-            if(unit != null && unit.isAlive())
-            {
-               unitsToKill.push(unit);
-            }
+            return;
          }
-         for each(unit in unitsToKill)
+         snapshot = gameScreen.team.enemyTeam.units.concat();
+         for each(unit in snapshot)
          {
-            unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+            if(unit != null && unit.isAlive() && unit.type != Unit.U_STATUE)
+            {
+               if(unit is Magikill && Magikill(unit).isBoss)
+               {
+                  unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+               }
+               else
+               {
+                  gameScreen.team.enemyTeam.removeUnitCompletely(unit,gameScreen.game);
+               }
+            }
          }
       }
 
