@@ -751,6 +751,7 @@ package com.brockw.stickwar.campaign.controllers
          this.rebelEndingStarted = true;
          this.rebelEndingStartFrame = gameScreen.game.frame;
          this.rebelRevealFog = true;
+         gameScreen.doAiUpdates = true;
          this.spawnRebelEndingBattle(gameScreen);
          this.setCameraTarget(gameScreen,this.getEnemyCameraX(gameScreen));
       }
@@ -803,6 +804,26 @@ package com.brockw.stickwar.campaign.controllers
          var i:int = 0;
          var rebel:Unit = null;
          var chaos:Unit = null;
+         if(gameScreen.team.unitGroups[Unit.U_KNIGHT] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_KNIGHT] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_DEAD] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_DEAD] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_BOMBER] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_BOMBER] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_CAT] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_CAT] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_WINGIDON] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_WINGIDON] = [];
+         }
          for(i = 0; i < rebelTypes.length; i++)
          {
             rebel = this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(rebelTypes[i]),this.getEndingBattleX(gameScreen,i,true),this.getEndingBattleY(gameScreen,i),false,true);
@@ -814,10 +835,9 @@ package com.brockw.stickwar.campaign.controllers
                this.issueDisplayAttackCommand(gameScreen,rebel,this.getEndingBattleX(gameScreen,i,false),rebel.py);
             }
          }
-         var displayChaosTeam:Team = this.getDisplayTeam(gameScreen,Team.T_CHAOS,gameScreen.team.homeX,gameScreen.team.direction,gameScreen.team.isEnemy);
          for(i = 0; i < chaosTypes.length; i++)
          {
-            chaos = this.spawnDisplayUnitRaw(gameScreen,displayChaosTeam,int(chaosTypes[i]),this.getEndingBattleX(gameScreen,i,false),this.getEndingBattleY(gameScreen,i + 3),false,true);
+            chaos = this.spawnDisplayUnit(gameScreen,gameScreen.team,int(chaosTypes[i]),this.getEndingBattleX(gameScreen,i,false),this.getEndingBattleY(gameScreen,i + 3),false,true);
             if(chaos != null)
             {
                this.issueDisplayAttackCommand(gameScreen,chaos,this.getEndingBattleX(gameScreen,i,true),chaos.py);
