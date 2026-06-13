@@ -130,25 +130,25 @@ package com.brockw.stickwar.engine.units
       {
          if(Boolean(mc.ninjahead))
          {
-            mc.ninjahead.gotoAndStop(armor == "" ? "default" : armor);
+            mc.ninjahead.gotoAndStop(armor == "" ? 1 : armor);
          }
          if(Boolean(mc.ninjastaff))
          {
-            mc.ninjastaff.gotoAndStop(weapon == "" ? "default" : weapon);
+            mc.ninjastaff.gotoAndStop(weapon == "" ? 1 : weapon);
          }
          if(Boolean(mc.ninjasword))
          {
-            mc.ninjasword.gotoAndStop(misc == "" ? "default" : misc);
+            mc.ninjasword.gotoAndStop(misc == "" ? 1 : misc);
          }
          if(Boolean(mc.weaponGroup))
          {
             if(Boolean(mc.weaponGroup.ninjastaff))
             {
-               mc.weaponGroup.ninjastaff.gotoAndStop(weapon == "" ? "default" : weapon);
+               mc.weaponGroup.ninjastaff.gotoAndStop(weapon == "" ? 1 : weapon);
             }
             if(Boolean(mc.weaponGroup.ninjasword))
             {
-               mc.weaponGroup.ninjasword.gotoAndStop(misc == "" ? "default" : misc);
+               mc.weaponGroup.ninjasword.gotoAndStop(misc == "" ? 1 : misc);
             }
          }
       }

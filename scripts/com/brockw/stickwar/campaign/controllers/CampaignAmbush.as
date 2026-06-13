@@ -1,5 +1,6 @@
 package com.brockw.stickwar.campaign.controllers
 {
+import com.brockw.stickwar.singleplayer.EnemyTeamAi;
    import com.brockw.stickwar.campaign.Campaign;
    import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.campaign.InGameMessage;
@@ -279,7 +280,8 @@ package com.brockw.stickwar.campaign.controllers
          }
          gameScreen.team.tech.isResearchedMap[Tech.MINER_SPEED] = true;
          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.MINER_WALL] = false;
-         CampaignGameScreen(gameScreen).enemyTeamAi.setUnitCreationEnabled(false);
+         gameScreen.team.enemyTeam.unitsAvailable[Unit.U_MINER] = 0;
+         (gameScreen as CampaignGameScreen).enemyTeamAi.setUnitCreationEnabled(false);
          this.applyRebelBreakDifficultyResearch(gameScreen);
          this.clearEnemyStartingCombatUnits(gameScreen);
       }
@@ -763,14 +765,20 @@ package com.brockw.stickwar.campaign.controllers
          var displayTypes:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH];
          var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
          var i:int = 0;
-         var bossXOffset:int = int(Math.ceil(displayTypes.length / 6));
+         var column:int = 0;
+         var row:int = 0;
+         var rowsInColumn:int = 0;
          for(i = 0; i < displayTypes.length; i++)
          {
-            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(displayTypes[i]),this.getEnemyDisplayX(gameScreen,i,displayTypes.length),this.getDisplayY(gameScreen,i,displayTypes.length),false,false);
+            column = int(i / 6);
+            row = i % 6;
+            rowsInColumn = Math.min(6,displayTypes.length - column * 6);
+            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(displayTypes[i]),this.getEnemyDisplayX_New(gameScreen,column,row),this.getDisplayY_New(gameScreen,row,rowsInColumn,column),false,false);
          }
+         var bossColumn:int = int(Math.ceil(displayTypes.length / 6));
          for(i = 0; i < bossTypes.length; i++)
          {
-            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),this.getEnemyDisplayX(gameScreen,bossXOffset * 6 + i,bossTypes.length),this.getDisplayY(gameScreen,bossXOffset * 6 + i,bossTypes.length),true,false);
+            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),this.getEnemyDisplayX_New(gameScreen,bossColumn,i),this.getDisplayY_New(gameScreen,i,bossTypes.length,bossColumn),true,false);
          }
       }
 
@@ -930,18 +938,13 @@ package com.brockw.stickwar.campaign.controllers
          return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (NATIVE_BASE_SPAWN_OFFSET + column * NATIVE_FORMATION_COLUMN_SPACING + row * 6);
       }
 
-      private function getEnemyDisplayX(gameScreen:GameScreen, formationIndex:int, totalCount:int) : Number
+      private function getEnemyDisplayX_New(gameScreen:GameScreen, column:int, row:int) : Number
       {
-         var column:int = int(formationIndex / 6);
-         var row:int = formationIndex % 6;
          return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + column * 90 + row * 8);
       }
 
-      private function getDisplayY(gameScreen:GameScreen, formationIndex:int, totalCount:int) : Number
+      private function getDisplayY_New(gameScreen:GameScreen, row:int, rowsInColumn:int, column:int) : Number
       {
-         var row:int = formationIndex % 6;
-         var column:int = int(formationIndex / 6);
-         var rowsInColumn:int = Math.min(6,totalCount - column * 6);
          var goalY:Number = gameScreen.game.map.height / 2 + (row - (rowsInColumn - 1) / 2) * 60 + (column % 2 == 0 ? -15 : 15);
          return Math.max(80,Math.min(gameScreen.game.map.height - 80,goalY));
       }
@@ -1252,7 +1255,7 @@ package com.brockw.stickwar.campaign.controllers
             {
                if(unit is Magikill && Magikill(unit).isBoss)
                {
-                  unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+                  unit.damage(0,unit.maxHealth * 2,null);
                }
                else
                {
@@ -1277,7 +1280,7 @@ package com.brockw.stickwar.campaign.controllers
             {
                if(unit is Magikill && Magikill(unit).isBoss)
                {
-                  unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+                  unit.damage(0,unit.maxHealth * 2,null);
                }
                else
                {
